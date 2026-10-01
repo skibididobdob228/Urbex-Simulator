@@ -1,0 +1,16 @@
+.sconsign.dblite
+*.os
+*.o
+*.obj
+*.pdb
+*.exp
+*.lib
+*.ilk
+project/bin/*
+!project/bin/.gitkeep
+project/.godot/
+.godot/
+compile_commands.json
+__pycache__/
+.vscode/
+.idea/
