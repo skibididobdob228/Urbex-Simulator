@@ -139,4 +139,4 @@ public:
 	void _process(double delta) override;
 };
 
-} // namespace urbex
+}

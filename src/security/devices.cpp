@@ -67,7 +67,7 @@ float segment_distance(const Vector3 &p1, const Vector3 &q1, const Vector3 &p2, 
 	return (c1 - c2).length();
 }
 
-} // namespace
+}
 
 void SecurityDevice::make_led(Node3D *parent, const Vector3 &position, float radius) {
 	Ref<SphereMesh> mesh;
@@ -386,4 +386,4 @@ bool PhotoSpot::in_frame(Node3D *camera, Vector3 forward) const {
 	return game->line_of_sight(cam, target, layer::WORLD | layer::DOORS);
 }
 
-} // namespace urbex
+}

@@ -75,7 +75,7 @@ ColorRect *make_rect(Node *parent, const Color &color) {
 	return r;
 }
 
-} // namespace
+}
 
 Ref<Theme> make_ui_theme() {
 	Ref<Theme> t;
@@ -615,4 +615,4 @@ void MainMenu::on_sensitivity(double value) {
 	UrbexGame::get_singleton()->set_sensitivity(float(value));
 }
 
-} // namespace urbex
+}

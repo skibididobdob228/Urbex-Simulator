@@ -85,4 +85,4 @@ public:
 	void _physics_process(double delta) override;
 };
 
-} // namespace urbex
+}

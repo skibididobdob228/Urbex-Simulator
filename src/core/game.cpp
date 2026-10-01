@@ -4,6 +4,8 @@
 #include "actors/player.h"
 #include "core/builder.h"
 #include "core/common.h"
+#include "core/effects.h"
+#include "core/props.h"
 #include "levels/levels.h"
 #include "security/devices.h"
 #include "ui/hud.h"
@@ -53,7 +55,7 @@ String format_time(float seconds) {
 	return String::num_int64(m) + ":" + (s < 10 ? "0" : "") + String::num_int64(s);
 }
 
-} // namespace
+}
 
 void UrbexGame::_bind_methods() {
 }
@@ -106,6 +108,7 @@ void UrbexGame::setup_input() {
 	key("sneak", KEY_Z);
 	key("flashlight", KEY_F);
 	key("interact", KEY_E);
+	key("camera_flash", KEY_V);
 	key("pause", KEY_ESCAPE);
 	key("pause", KEY_P);
 	mouse("aim", MOUSE_BUTTON_RIGHT);
@@ -119,6 +122,7 @@ void UrbexGame::_ready() {
 	}
 	singleton = this;
 	set_process_mode(PROCESS_MODE_ALWAYS);
+	get_tree()->set_auto_accept_quit(false);
 	setup_input();
 
 	Ref<ConfigFile> cfg;
@@ -163,7 +167,7 @@ void UrbexGame::_ready() {
 			}
 		}
 		UtilityFunctions::printerr("Unknown level id for autotest: ", autotest_level);
-		get_tree()->quit(2);
+		request_quit(2);
 		return;
 	}
 	mode = MODE_MENU;
@@ -175,6 +179,17 @@ void UrbexGame::_exit_tree() {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
+	silence_audio();
+}
+
+void UrbexGame::_notification(int p_what) {
+	if (p_what == NOTIFICATION_WM_CLOSE_REQUEST && !Engine::get_singleton()->is_editor_hint()) {
+		request_quit(0);
+	}
+}
+
+void UrbexGame::silence_audio() {
+	audio_muted = true;
 	for (AudioStreamPlayer *p : { ambience, ambience2, heartbeat }) {
 		if (p) {
 			p->stop();
@@ -183,6 +198,17 @@ void UrbexGame::_exit_tree() {
 	}
 	if (alarm_player) {
 		alarm_player->stop();
+	}
+	TypedArray<Node> players = find_children("*", "AudioStreamPlayer3D", true, false);
+	players.append_array(find_children("*", "AudioStreamPlayer", true, false));
+	for (int i = 0; i < players.size(); i++) {
+		if (AudioStreamPlayer3D *p = Object::cast_to<AudioStreamPlayer3D>(players[i])) {
+			p->stop();
+			p->set_stream(Ref<AudioStream>());
+		} else if (AudioStreamPlayer *q = Object::cast_to<AudioStreamPlayer>(players[i])) {
+			q->stop();
+			q->set_stream(Ref<AudioStream>());
+		}
 	}
 }
 
@@ -240,7 +266,7 @@ void UrbexGame::run_automation() {
 		if (frame == automation_frames) {
 			Ref<Image> img = get_viewport()->get_texture()->get_image();
 			img->save_png(screenshot_path);
-			get_tree()->quit(0);
+			request_quit(0);
 		}
 		return;
 	}
@@ -325,6 +351,12 @@ void UrbexGame::run_automation() {
 				UtilityFunctions::print("[autotest] WARN gbr search point off navmesh ", p, " -> ", c);
 				bad_paths++;
 			}
+			Vector3 start = ns->map_get_closest_point(map, level.gbr_spawn);
+			PackedVector3Array route = ns->map_get_path(map, start, c, true);
+			if (route.is_empty() || (route[route.size() - 1] - c).length() > 1.5f) {
+				UtilityFunctions::print("[autotest] WARN gbr search point unreachable ", p);
+				bad_paths++;
+			}
 		}
 		UtilityFunctions::print("[autotest] warnings=", bad_paths);
 	}
@@ -368,7 +400,7 @@ void UrbexGame::run_automation() {
 			UtilityFunctions::print("[autotest] screenshot saved ", screenshot_path);
 		}
 		UtilityFunctions::print("[autotest] done mode=", int(mode), " time=", stats.time, " alarms=", stats.alarms, " spotted=", stats.spotted);
-		get_tree()->quit(0);
+		request_quit(0);
 	}
 }
 
@@ -636,7 +668,16 @@ void UrbexGame::resume() {
 }
 
 void UrbexGame::quit_game() {
-	get_tree()->quit();
+	request_quit(0);
+}
+
+void UrbexGame::request_quit(int code) {
+	if (quit_countdown >= 0) {
+		return;
+	}
+	silence_audio();
+	quit_code = code;
+	quit_countdown = 12;
 }
 
 void UrbexGame::_unhandled_input(const Ref<InputEvent> &event) {
@@ -670,6 +711,12 @@ void UrbexGame::_unhandled_input(const Ref<InputEvent> &event) {
 
 void UrbexGame::_process(double delta) {
 	if (Engine::get_singleton()->is_editor_hint() || !hud) {
+		return;
+	}
+	if (quit_countdown >= 0) {
+		if (quit_countdown-- == 0) {
+			get_tree()->quit(quit_code);
+		}
 		return;
 	}
 	hud->tick(delta);
@@ -825,6 +872,22 @@ void UrbexGame::spawn_gbr() {
 		g->set_global_position(level.gbr_spawn + Vector3(float(i) * 1.2f - 0.6f, 0.2f, float(i) * 0.8f));
 		g->start_chase_from_alarm(alarm_position);
 	}
+	if (level.gbr_van) {
+		LevelBuilder vb(level_root, level_root, &material_library, 4242u);
+		props::uaz_van(vb, level.gbr_van_position, level.gbr_van_yaw);
+		Basis turn(Vector3(0, 1, 0), level.gbr_van_yaw);
+		FxBeacon *beacon = memnew(FxBeacon);
+		beacon->setup(material_library, Color(1.0f, 0.12f, 0.08f), Color(0.15f, 0.3f, 1.0f), true, true);
+		level_root->add_child(beacon);
+		beacon->set_global_transform(Transform3D(turn, level.gbr_van_position + turn.xform(Vector3(0.0f, 2.05f, -0.9f))));
+		OmniLight3D *head = memnew(OmniLight3D);
+		head->set_color(Color(1.0f, 0.95f, 0.85f));
+		head->set_param(Light3D::PARAM_ENERGY, 2.0f);
+		head->set_param(Light3D::PARAM_RANGE, 9.0f);
+		level_root->add_child(head);
+		head->set_global_position(level.gbr_van_position + turn.xform(Vector3(0.0f, 1.0f, -3.2f)));
+		play_sound("metal_door", level.gbr_van_position, 0.0f, 1.3f, 60.0f);
+	}
 	play_sound("radio", level.gbr_spawn, 4.0f, 1.0f, 80.0f);
 	notify("Приехала ГБР: двое с фонарями прочёсывают объект"_u, Color(1.0f, 0.4f, 0.3f));
 }
@@ -889,6 +952,9 @@ void UrbexGame::update_hud(double delta) {
 	}
 	if (player->is_crouching()) {
 		st += " · присед"_u;
+	}
+	if (player->is_photo_flash()) {
+		st += " · вспышка"_u;
 	}
 	hud->set_status(st);
 	hud->set_bars(player->get_stamina(), clampf(player->get_noise_radius() / 13.0f, 0.0f, 1.0f), player->get_exposure(), player->get_battery());
@@ -1292,6 +1358,9 @@ void UrbexGame::set_power(const String &group, bool on, const Vector3 &where) {
 }
 
 void UrbexGame::play_sound(const String &name, const Vector3 &position, float volume_db, float pitch, float max_distance) {
+	if (audio_muted) {
+		return;
+	}
 	if (!level_root) {
 		play_ui_sound(name, volume_db, pitch);
 		return;
@@ -1313,6 +1382,9 @@ void UrbexGame::play_sound(const String &name, const Vector3 &position, float vo
 }
 
 void UrbexGame::play_ui_sound(const String &name, float volume_db, float pitch) {
+	if (audio_muted) {
+		return;
+	}
 	Ref<AudioStreamWAV> stream = sound_bank.get(std::string(name.utf8().get_data()));
 	if (stream.is_null()) {
 		return;
@@ -1330,4 +1402,4 @@ float UrbexGame::now() const {
 	return stats.time;
 }
 
-} // namespace urbex
+}

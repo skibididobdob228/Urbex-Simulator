@@ -27,7 +27,113 @@ void stencil(LevelBuilder &b, const Vector3 &pos, const Vector3 &normal, const S
 	b.text(pos, normal, text, height, Color(0.62f, 0.08f, 0.06f), true);
 }
 
-} // namespace
+void shelter_dressing(Kit &k) {
+	LevelBuilder &b = k.b;
+
+	props::vent_duct(b, Vector3(-23.0f, UC - 0.32f, -0.6f), Vector3(13.6f, UC - 0.32f, -0.6f), 0.5f, 0.34f, UC);
+	props::cable_tray(b, Vector3(-23.6f, UC - 0.12f, -1.85f), Vector3(13.6f, UC - 0.12f, -1.85f));
+	b.pipe(Vector3(-23.8f, UC - 0.28f, -2.12f), Vector3(13.8f, UC - 0.28f, -2.12f), 0.06f, "metal_blue");
+	b.pipe(Vector3(-23.8f, UC - 0.46f, -2.15f), Vector3(13.8f, UC - 0.46f, -2.15f), 0.04f, "rust");
+	for (float x : { -21.0f, -12.5f, -0.5f, 8.5f }) {
+		b.visual_box(Vector3(x, UC - 0.37f, -2.22f), Vector3(0.05f, 0.3f, 0.1f), "steel", Basis(), false);
+	}
+	for (float x : { -16.0f, -1.0f, 11.0f }) {
+		props::valve(b, Vector3(x, UC - 0.28f, -1.98f), Vector3(0, 0, 1), 0.11f);
+	}
+	k.steam(Vector3(-6.4f, UC - 0.28f, -2.05f), Vector3(0.2f, -0.35f, 1.0f), 0.32f, true);
+	k.drips(Vector3(-6.2f, UC - 0.35f, -1.95f), UH - 0.36f, 1.4f, true);
+	k.drips(Vector3(-17.0f, UC - 0.05f, -1.5f), UH - 0.06f, 0.5f, true);
+	k.drips(Vector3(7.8f, UC - 0.05f, -1.9f), UH - 0.06f, 0.4f, false);
+	k.decal("decal_water", Vector3(-6.0f, UC - 0.01f, -1.4f), Vector3(0, -1, 0), Vector2(2.4f, 2.0f), 0.3f, 0.85f);
+	k.decal("decal_water", Vector3(-17.0f, UC - 0.01f, -1.2f), Vector3(0, -1, 0), Vector2(1.8f, 1.6f), 1.2f, 0.7f);
+	k.decal("decal_streak", Vector3(-6.4f, UF + 1.4f, -2.21f), Vector3(0, 0, 1), Vector2(1.0f, 2.2f), 0.0f, 0.7f);
+	k.dust(Vector3(-5.0f, UF + 1.3f, -1.2f), Vector3(18.5f, 1.2f, 1.0f), 0.8f);
+	k.dust(Vector3(-8.0f, UF + 1.3f, -6.0f), Vector3(5.8f, 1.2f, 3.3f), 0.7f);
+	k.dust(Vector3(4.0f, UF + 1.3f, -6.0f), Vector3(5.8f, 1.2f, 3.3f), 0.7f);
+	k.dust(Vector3(-3.0f, UF + 1.3f, 3.0f), Vector3(2.9f, 1.2f, 2.8f), 0.9f);
+
+	props::fire_shield(b, Vector3(-21.6f, UF, -0.19f), 0.0f);
+	props::extinguisher(b, Vector3(-13.3f, UF, -0.4f));
+	props::extinguisher(b, Vector3(8.5f, UF, -0.4f));
+	props::extinguisher(b, Vector3(13.5f, UF, -2.0f));
+	props::wall_phone(b, Vector3(1.0f, UF + 1.5f, -0.24f), 0.0f);
+	props::wheel_valve_door_frame(b, Vector3(6.7f, UF, 3.0f), 0.0f, 1.24f, 2.02f);
+	props::wheel_valve_door_frame(b, Vector3(6.7f, UF, 0.0f), 0.0f, 1.24f, 2.02f);
+	props::wheel_valve_door_frame(b, Vector3(-24.0f, UF, -1.2f), PI * 0.5f, 1.24f, 2.02f);
+
+	props::water_tank(b, Vector3(8.6f, UF, -5.0f), PI * 0.5f);
+	props::water_tank(b, Vector3(-12.75f, UF, -3.4f), 0.0f);
+	props::lockers(b, Vector3(-2.37f, UF, -5.6f), PI * 0.5f, 3);
+	props::table(b, Vector3(-4.6f, UF, -4.0f), 0.1f, 1.4f, 0.8f);
+	props::chair(b, Vector3(-4.4f, UF, -3.2f), PI + 0.3f, false);
+	props::chair(b, Vector3(-5.4f, UF, -4.9f), 0.4f, true);
+	props::kettle(b, Vector3(-4.9f, UF + 0.78f, -3.9f));
+	props::bottles(b, Vector3(-6.6f, UF, -3.4f), 3, 41);
+	props::wall_clock(b, Vector3(-8.0f, UF + 2.2f, -9.22f), PI);
+
+	props::crates(b, Vector3(-23.5f, UF, -7.2f), -PI * 0.5f, 6, "ГП-5"_u, 3);
+	props::crates(b, Vector3(-15.0f, UF, -8.8f), PI, 4, "ИПП-8"_u, 9);
+	props::lockers(b, Vector3(-14.35f, UF, -6.2f), PI * 0.5f, 2);
+
+	props::cabinet(b, Vector3(13.6f, UF, -3.3f), PI * 0.5f, true);
+	props::stretcher(b, Vector3(11.3f, UF, -5.2f), PI * 0.5f);
+	props::sink(b, Vector3(12.68f, UF, 1.0f), PI * 0.5f);
+	props::sink(b, Vector3(12.68f, UF, 2.4f), PI * 0.5f);
+	k.flicker(Vector3(10.5f, UC - 0.08f, 2.0f), Color(0.85f, 0.95f, 1.0f), 6.0f, 0.9f, FxFlicker::MODE_FLUORESCENT, "shelter", true);
+	k.drips(Vector3(9.0f, UC - 0.05f, 3.2f), UH - 0.06f, 0.8f, true);
+
+	props::radio_station(b, Vector3(3.7f, UF + 0.8f, 4.75f), 0.0f);
+	props::kettle(b, Vector3(1.3f, UF + 0.8f, 4.3f));
+	props::chair(b, Vector3(2.4f, UF, 3.5f), PI, false);
+	props::wall_clock(b, Vector3(4.6f, UF + 2.2f, 5.82f), 0.0f);
+	props::cabinet(b, Vector3(0.65f, UF, 2.0f), -PI * 0.5f, false);
+
+	k.sparks(Vector3(-13.65f, UF + 1.95f, 1.6f), "shelter", 3.5f, 9.0f);
+	props::hanging_cable(b, Vector3(-13.7f, UF + 1.9f, 1.4f), Vector3(-12.0f, UC - 0.05f, 0.6f), 0.5f);
+	props::barrel(b, Vector3(-13.3f, UF, 5.3f), "metal_blue", false);
+	props::barrel(b, Vector3(-7.0f, UF, 5.3f), "rust", true);
+	props::puddle(b, Vector3(-10.0f, UF, 1.6f), 0.9f, 61u);
+	k.decal("decal_soot", Vector3(-11.5f, UC - 0.01f, 3.2f), Vector3(0, -1, 0), Vector2(1.6f, 1.6f), 0.0f, 0.8f);
+
+	k.flicker(Vector3(-31.0f, UC - 0.1f, -1.2f), Color(0.85f, 0.95f, 1.0f), 6.0f, 0.8f, FxFlicker::MODE_BROKEN, "shelter", true);
+	k.fog(Vector3(-32.0f, UF + 0.12f, -1.2f), Vector3(7.5f, 0.06f, 0.6f), 3.0f);
+	k.drips(Vector3(-28.0f, UC - 0.05f, -1.6f), UH - 0.06f, 1.0f, false);
+	k.drips(Vector3(-35.6f, UC - 0.05f, -0.9f), UH - 0.06f, 1.6f, false);
+	k.drips(Vector3(-41.4f, -0.55f, -1.6f), -0.55f - UF, 0.8f, false);
+	k.sound_loop(Vector3(-34.0f, UF + 1.0f, -1.2f), "drip", -8.0f, 14.0f);
+	props::hanging_cable(b, Vector3(-25.0f, UC - 0.05f, -0.5f), Vector3(-30.0f, UC - 0.05f, -0.5f), 0.7f);
+	props::hanging_cable(b, Vector3(-33.0f, UC - 0.05f, -1.9f), Vector3(-38.0f, UC - 0.05f, -1.7f), 1.0f);
+	k.decal("decal_streak", Vector3(-30.0f, UF + 1.3f, -1.96f), Vector3(0, 0, 1), Vector2(1.2f, 2.4f), 0.0f, 0.8f);
+	k.decal("decal_streak", Vector3(-36.5f, UF + 1.3f, -0.44f), Vector3(0, 0, -1), Vector2(1.2f, 2.4f), 0.0f, 0.8f);
+
+	props::truck(b, Vector3(27.0f, 0.0f, -14.0f), 0.2f);
+	props::shipping_container(b, Vector3(22.0f, 0.0f, 12.0f), 0.0f, "rust");
+	props::shipping_container(b, Vector3(25.0f, 0.0f, 12.6f), 0.04f, "metal_blue");
+	props::shipping_container(b, Vector3(-10.0f, 0.0f, -16.0f), PI * 0.5f, "rust");
+	props::pallets(b, Vector3(22.5f, 0.0f, -8.5f), 0.4f, 5);
+	props::pallets(b, Vector3(-6.0f, 0.0f, -16.4f), 1.2f, 3);
+	props::barrel(b, Vector3(-7.4f, 0.0f, -14.2f), "rust", false);
+	props::barrel(b, Vector3(-6.7f, 0.0f, -14.0f), "metal_blue", false);
+	props::trash_container(b, Vector3(-2.0f, 0.0f, 7.5f), 0.0f);
+	props::bench(b, Vector3(-8.0f, 0.0f, 7.8f), 0.0f);
+	props::drain_pipe(b, Vector3(-12.2f, 9.9f, 8.85f), 9.9f);
+	props::drain_pipe(b, Vector3(-41.8f, 9.9f, 8.85f), 9.9f);
+	for (int i = 0; i < 6; i++) {
+		props::window_frame(b, Vector3(-40.0f + float(i) * 5.0f, 5.5f, 8.94f), 0.0f, 2.4f, 3.0f, 0.55f);
+	}
+	props::tec_chimney(b, Vector3(-34.0f, 0.0f, 36.0f), 46.0f, 2.6f);
+	fx::smoke_plume(b.dynamic_root, k.g.get_materials(), Vector3(-34.0f, 46.5f, 36.0f), 1.6f, Vector3(0.35f, 0.15f, -0.1f), Color(0.5f, 0.5f, 0.52f, 0.5f));
+	props::tec_chimney(b, Vector3(150.0f, 0.0f, 110.0f), 120.0f, 6.0f);
+	fx::smoke_plume(b.dynamic_root, k.g.get_materials(), Vector3(150.0f, 121.0f, 110.0f), 3.5f, Vector3(0.6f, 0.2f, -0.2f), Color(0.55f, 0.55f, 0.58f, 0.45f));
+	k.beacon(Vector3(16.5f, 3.0f, -25.0f), Color(1.0f, 0.5f, 0.05f), Color(1.0f, 0.5f, 0.05f), false, false);
+	k.beacon(Vector3(7.6f, 3.3f, 8.4f), Color(1.0f, 0.12f, 0.08f), Color(1.0f, 0.12f, 0.08f), false, false);
+	k.flicker(Vector3(5.0f, 2.85f, 7.75f), Color(1.0f, 0.85f, 0.6f), 6.0f, 0.9f, FxFlicker::MODE_BROKEN, "plant", true);
+	k.fog(Vector3(-40.0f, 0.2f, -8.0f), Vector3(8.0f, 0.12f, 18.0f), 0.7f);
+	k.fog(Vector3(10.0f, 0.2f, 22.0f), Vector3(22.0f, 0.12f, 6.0f), 0.6f);
+	k.leaves(Vector3(-40.0f, 6.0f, -10.0f), Vector3(8.0f, 2.0f, 16.0f), 50);
+}
+
+}
 
 void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	Kit k(b, d, g);
@@ -48,6 +154,9 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	d.kill_height = -14.0f;
 	d.gbr_delay = 60.0f;
 	d.gbr_spawn = Vector3(11.0f, 0.1f, -27.0f);
+	d.gbr_van = true;
+	d.gbr_van_position = Vector3(14.0f, 0.05f, -36.0f);
+	d.gbr_van_yaw = PI * 0.5f;
 	d.ambience = Ambience::Underground;
 	d.nav_bounds = AABB(Vector3(-52.0f, -7.0f, -32.0f), Vector3(90.0f, 11.0f, 64.0f));
 	d.start_items.push_back("boltcutter");
@@ -150,7 +259,8 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	stencil(b, Vector3(-18.0f, UF + 1.9f, -0.17f), Vector3(0, 0, -1), "НЕ КУРИТЬ!"_u, 0.25f);
 
 	for (float x : { -20.0f, -14.0f, -8.0f, -2.0f, 4.0f, 10.0f }) {
-		k.ceiling_lamp(Vector3(x, UC - 0.06f, -1.2f), Color(1.0f, 0.8f, 0.55f), 7.0f, 0.9f, "shelter");
+		k.ceiling_lamp(Vector3(x, UC - 0.5f, -1.2f), Color(1.0f, 0.8f, 0.55f), 7.0f, 0.9f, "shelter");
+		b.pipe(Vector3(x, UC - 0.44f, -1.2f), Vector3(x, UC, -1.2f), 0.012f, "black");
 	}
 	for (const Vector3 &p : { Vector3(-8.0f, UC - 0.06f, -6.0f), Vector3(4.0f, UC - 0.06f, -6.0f), Vector3(-3.0f, UC - 0.06f, 3.0f), Vector3(-10.0f, UC - 0.06f, 3.0f), Vector3(6.6f, UC - 0.06f, 1.5f), Vector3(6.6f, UC - 0.06f, 6.0f) }) {
 		k.ceiling_lamp(p, Color(1.0f, 0.8f, 0.55f), 7.0f, 0.8f, "shelter");
@@ -240,7 +350,7 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.spot(Vector3(-24.0f, UF + 1.1f, -1.2f), "blast_door", "Гермодверь аварийного выхода"_u, 10.0f);
 	k.noisy(Vector3(-32.0f, UF + 0.2f, -1.2f), Vector3(3.0f, 0.4f, 1.6f));
 	for (int i = 0; i < 5; i++) {
-		b.visual_box(Vector3(-36.0f + float(i) * 2.6f, UF + 0.01f, -1.2f + b.rng.range(-0.4f, 0.4f)), Vector3(b.rng.range(0.5f, 1.2f), 0.02f, b.rng.range(0.4f, 0.8f)), "water", Basis(), false);
+		props::puddle(b, Vector3(-36.0f + float(i) * 2.6f, UF, -1.2f + b.rng.range(-0.3f, 0.3f)), b.rng.range(0.6f, 1.1f), 200u + uint32_t(i) * 17u);
 	}
 
 	Vector3 og(-41.2f, 0.0f, -1.2f);
@@ -262,10 +372,10 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.hint(og + Vector3(3.5f, 1.0f, 0.0f), Vector3(4.0f, 2.0f, 5.0f), "Оголовок аварийного выхода. Навесной замок можно перекусить болторезом, но это громко."_u);
 	k.shadow_zone(Vector3(-14.0f, -3.5f, 3.5f), Vector3(57.0f, 6.0f, 26.5f));
 
-	b.fence(Vector3(-50.0f, 0, -30.0f), Vector3(35.0f, 0, -30.0f), 2.6f, "concrete", { Opening{ 30.0f, 1.3f, 0.0f, 2.6f }, Opening{ 61.0f, 6.0f, 0.0f, 2.6f } });
-	b.fence(Vector3(-50.0f, 0, 30.0f), Vector3(35.0f, 0, 30.0f), 2.6f, "concrete");
-	b.fence(Vector3(-50.0f, 0, -30.0f), Vector3(-50.0f, 0, 30.0f), 2.6f, "concrete");
-	b.fence(Vector3(35.0f, 0, -30.0f), Vector3(35.0f, 0, 30.0f), 2.6f, "concrete");
+	b.fence(Vector3(-50.0f, 0, -30.0f), Vector3(35.0f, 0, -30.0f), 2.6f, "fence_concrete", { Opening{ 30.0f, 1.3f, 0.0f, 2.6f }, Opening{ 61.0f, 6.0f, 0.0f, 2.6f } });
+	b.fence(Vector3(-50.0f, 0, 30.0f), Vector3(35.0f, 0, 30.0f), 2.6f, "fence_concrete");
+	b.fence(Vector3(-50.0f, 0, -30.0f), Vector3(-50.0f, 0, 30.0f), 2.6f, "fence_concrete");
+	b.fence(Vector3(35.0f, 0, -30.0f), Vector3(35.0f, 0, 30.0f), 2.6f, "fence_concrete");
 	b.rubble(Vector3(-20.0f, 0.0f, -30.5f), 1.2f, 14, "concrete");
 	Door *gate = k.door(Vector3(11.0f, 0.0f, -30.0f), 0.0f, Door::STYLE_GATE, 6.0f, 2.4f, "Ворота завода"_u);
 	gate->set_jammed(true, "Ворота закрыты изнутри"_u);
@@ -277,9 +387,6 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 		b.visual_box(Vector3(-40.0f + float(i) * 5.0f, 5.5f, 8.98f), Vector3(2.4f, 3.0f, 0.02f), "black");
 	}
 	b.text(Vector3(-27.0f, 8.4f, 8.95f), Vector3(0, 0, -1), "ЦЕХ № 3"_u, 1.0f, Color(0.75f, 0.72f, 0.65f));
-	b.box(Vector3(22.0f, 1.3f, 12.0f), Vector3(2.44f, 2.6f, 6.06f), "rust");
-	b.box(Vector3(25.0f, 1.3f, 12.6f), Vector3(2.44f, 2.6f, 6.06f), "metal");
-	b.box(Vector3(-10.0f, 1.3f, -16.0f), Vector3(6.06f, 2.6f, 2.44f), "rust");
 	b.box(Vector3(18.0f, 0.4f, -8.0f), Vector3(1.2f, 0.8f, 1.2f), "wood");
 	b.box(Vector3(19.4f, 0.4f, -8.2f), Vector3(1.2f, 0.8f, 1.2f), "wood");
 
@@ -310,7 +417,11 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 		if ((p - og).length() < 4.0f || p.z > 8.0f) {
 			continue;
 		}
-		b.tree(p, tr.range(6.0f, 10.0f));
+		if (tr.chance(0.65f)) {
+			props::birch(b, p, tr.range(7.0f, 11.0f), uint32_t(i) * 7u + 3u);
+		} else {
+			b.tree(p, tr.range(6.0f, 10.0f));
+		}
 	}
 	for (int i = 0; i < 10; i++) {
 		float a = float(i) / 10.0f * 2.0f * PI;
@@ -339,7 +450,9 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	watchman->set_post(booth + Vector3(0.5f, 0.15f, -0.3f), { yaw_towards(booth, Vector3(11.0f, 0, -32.0f)), yaw_towards(booth, Vector3(0.0f, 0, 5.0f)) }, 8.0f, true);
 	watchman->set_vision(12.0f, 100.0f);
 
+	shelter_dressing(k);
+
 	d.gbr_search_points = { Vector3(5.0f, 0.0f, 3.0f), Vector3(6.6f, UF, 6.0f), Vector3(0.0f, UF, -1.2f), Vector3(-8.0f, UF, -6.0f), Vector3(4.0f, UF, -6.0f), Vector3(-19.0f, UF, -6.0f), Vector3(-30.0f, UF, -1.2f), Vector3(-3.0f, UF, 3.0f), Vector3(-36.0f, 0.0f, -6.0f) };
 }
 
-} // namespace urbex
+}

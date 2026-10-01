@@ -4,6 +4,8 @@ import os
 env = SConscript("godot-cpp/SConstruct")
 
 env.Append(CPPPATH=["src/"])
+if env["platform"] == "linux":
+    env.Append(CCFLAGS=["-pthread"], LINKFLAGS=["-pthread"])
 sources = Glob("src/*.cpp") + Glob("src/*/*.cpp")
 
 lib_name = "liburbex"

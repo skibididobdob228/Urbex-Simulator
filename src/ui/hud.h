@@ -129,4 +129,4 @@ public:
 	void refresh();
 };
 
-} // namespace urbex
+}

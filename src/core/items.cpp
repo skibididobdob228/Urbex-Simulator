@@ -38,4 +38,4 @@ String item_display_name(const String &id) {
 	return id;
 }
 
-} // namespace urbex
+}

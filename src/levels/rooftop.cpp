@@ -48,7 +48,50 @@ struct StairLight {
 	float timer = 0.0f;
 };
 
-} // namespace
+void facade_dressing(LevelBuilder &b) {
+	Rng r(31);
+	for (int n = 1; n < FLOORS; n++) {
+		float y = FH * float(n) + 0.05f;
+		for (float x : { -7.0f, -2.5f }) {
+			props::balcony(b, Vector3(x, y, -ZW - 0.2f), 0.0f, r.chance(0.55f), uint32_t(n * 17) + uint32_t(x * -3.0f));
+		}
+		for (float x : { 2.5f, 7.0f }) {
+			props::balcony(b, Vector3(x, y, ZW + 0.2f), PI, r.chance(0.55f), uint32_t(n * 23) + uint32_t(x * 5.0f));
+		}
+		if (r.chance(0.55f)) {
+			props::ac_unit(b, Vector3(XW + 0.2f, y + 2.0f, r.range(-5.0f, 5.0f)), -PI * 0.5f);
+		}
+		if (r.chance(0.5f)) {
+			props::ac_unit(b, Vector3(-XW - 0.2f, y + 2.0f, r.range(-5.0f, 5.0f)), PI * 0.5f);
+		}
+		if (r.chance(0.35f)) {
+			props::satellite_dish(b, Vector3(-XW - 0.52f, y + 1.6f, r.range(-5.0f, 5.0f)), PI * 0.5f);
+		}
+		if (r.chance(0.3f)) {
+			props::satellite_dish(b, Vector3(r.range(-0.8f, 3.4f), y + 1.8f, -ZW - 0.52f), 0.0f);
+		}
+	}
+	for (float sx : { -1.0f, 1.0f }) {
+		for (float sz : { -1.0f, 1.0f }) {
+			props::drain_pipe(b, Vector3(sx * (XW + 0.28f), ROOF + 0.2f, sz * (ZW + 0.28f)), ROOF + 0.2f);
+		}
+	}
+}
+
+void stair_dressing(LevelBuilder &b) {
+	for (int n = 0; n < FLOORS; n++) {
+		float y = FH * float(n);
+		float ym = y + FH * 0.5f;
+		props::garbage_chute(b, Vector3(9.4f, ym, -6.5f), PI * 0.5f, FH);
+		props::radiator(b, Vector3(6.2f, ym, -6.84f), 0.0f, 9);
+		props::electric_panel(b, Vector3(9.81f, y + 1.55f, -1.75f), PI * 0.5f, n == 7);
+		if (n % 3 == 1) {
+			props::flower_pot(b, Vector3(4.4f, y + 0.02f, -1.3f));
+		}
+	}
+}
+
+}
 
 void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	Kit k(b, d, g);
@@ -69,6 +112,9 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	d.kill_height = -10.0f;
 	d.gbr_delay = 70.0f;
 	d.gbr_spawn = Vector3(0.0f, 0.15f, 0.5f);
+	d.gbr_van = true;
+	d.gbr_van_position = Vector3(20.0f, 0.05f, -40.5f);
+	d.gbr_van_yaw = PI * 0.5f;
 	d.ambience = Ambience::Rooftop;
 	d.nav_bounds = AABB(Vector3(-42.0f, -1.0f, -37.0f), Vector3(84.0f, 43.0f, 74.0f));
 	d.start_items.push_back("magnet");
@@ -169,9 +215,7 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.ceiling_lamp(Vector3(-6.5f, FH - 0.36f, -4.0f), Color(1.0f, 0.82f, 0.6f), 6.0f, 1.0f, "");
 	k.ceiling_lamp(Vector3(-3.0f, FH - 0.36f, 0.5f), Color(1.0f, 0.9f, 0.75f), 7.0f, 1.0f, "");
 	k.ceiling_lamp(Vector3(3.5f, FH - 0.36f, 0.5f), Color(1.0f, 0.9f, 0.75f), 7.0f, 0.9f, "");
-	for (int i = 0; i < 8; i++) {
-		b.visual_box(Vector3(-1.6f + float(i % 4) * 0.42f, 1.2f + float(i / 4) * 0.3f, 1.88f), Vector3(0.38f, 0.26f, 0.12f), "metal_gray");
-	}
+	props::mailboxes(b, Vector3(-0.97f, 1.55f, 1.81f), 0.0f, 5, 2);
 	b.text(Vector3(-0.95f, 1.85f, 1.86f), Vector3(0, 0, -1), "ПОЧТА"_u, 0.14f, Color(0.2f, 0.2f, 0.2f));
 	k.hint(Vector3(-6.0f, 1.0f, 4.5f), Vector3(4.0f, 2.0f, 4.5f), "За стеклом консьержка. Жди, пока отвернётся к телевизору, и тихо проходи к лестнице (восточный конец холла)."_u);
 	k.board(Vector3(2.5f, 1.5f, 1.88f), 0.0f, "Объявление УК"_u,
@@ -297,19 +341,60 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	barrier->set_jammed(true, "Ворота открываются только с пульта"_u);
 	b.text(Vector3(0.0f, 2.3f, -35.1f), Vector3(0, 0, -1), "ЖК «ЗАРЯ»"_u, 0.4f, Color(0.95f, 0.9f, 0.8f));
 
-	const char *car_colors[] = { "red_paint", "plastic_white", "black", "metal_gray", "yellow_paint" };
+	const char *car_colors[] = { "car_red", "car_white", "car_black", "car_silver", "car_green" };
+	Rng carr(8);
 	for (int i = 0; i < 9; i++) {
+		if (i == 4) {
+			continue;
+		}
 		Vector3 c(18.0f + float(i % 3) * 3.0f, 0.0f, -22.0f + float(i / 3) * 6.0f);
-		b.box(c + Vector3(0, 0.7f, 0), Vector3(1.8f, 0.8f, 4.3f), car_colors[i % 5]);
-		b.visual_box(c + Vector3(0, 1.35f, -0.2f), Vector3(1.6f, 0.55f, 2.2f), "glass_booth");
+		props::car(b, c, carr.range(-0.05f, 0.05f) + (i % 2 == 0 ? 0.0f : PI), car_colors[(i * 3) % 5], false);
 	}
+	props::bench(b, Vector3(-20.0f, 0.0f, -17.6f), 0.0f);
+	props::bench(b, Vector3(-13.0f, 0.0f, -17.6f), 0.0f);
+	props::trash_container(b, Vector3(-30.0f, 0.0f, -28.5f), 0.0f);
+	props::trash_container(b, Vector3(-28.4f, 0.0f, -28.5f), 0.05f);
+	props::swing(b, Vector3(-22.0f, 0.0f, -9.0f), 0.0f);
+	props::slide(b, Vector3(-19.5f, 0.0f, -5.5f), PI * 0.5f);
 	for (int i = 0; i < 4; i++) {
-		b.box(Vector3(-20.0f + float(i) * 4.0f, 0.25f, -18.0f), Vector3(1.6f, 0.5f, 0.5f), "wood");
+		float a = float(i) * PI * 0.5f;
+		Vector3 c(-27.0f + std::sin(a) * 1.4f, 0.12f, -3.0f + std::cos(a) * 1.4f);
+		b.visual_box(c, i % 2 == 0 ? Vector3(3.0f, 0.24f, 0.2f) : Vector3(0.2f, 0.24f, 3.0f), "wood");
 	}
-	b.box(Vector3(-22.0f, 0.4f, -8.0f), Vector3(6.0f, 0.8f, 6.0f), "wood", false);
-	b.pipe(Vector3(-24.0f, 0.0f, -8.0f), Vector3(-24.0f, 2.4f, -8.0f), 0.06f, "red_paint");
-	b.pipe(Vector3(-20.0f, 0.0f, -8.0f), Vector3(-20.0f, 2.4f, -8.0f), 0.06f, "red_paint");
-	b.pipe(Vector3(-24.0f, 2.4f, -8.0f), Vector3(-20.0f, 2.4f, -8.0f), 0.06f, "red_paint");
+	b.visual_box(Vector3(-27.0f, 0.06f, -3.0f), Vector3(2.6f, 0.08f, 2.6f), "ground", Basis(), false);
+	props::doormat(b, Vector3(-6.0f, 0.08f, ZW + 0.9f), 0.0f);
+	props::flower_pot(b, Vector3(-7.7f, 0.08f, ZW + 0.55f));
+	props::flower_pot(b, Vector3(-4.3f, 0.08f, ZW + 0.55f));
+	facade_dressing(b);
+	stair_dressing(b);
+	k.beacon(Vector3(-4.8f, 3.25f, ZW + 1.9f), Color(1.0f, 0.12f, 0.08f), Color(1.0f, 0.12f, 0.08f), false, false);
+
+	for (const Vector3 &p : { Vector3(-8.5f, ROOF, -6.2f), Vector3(9.0f, ROOF, 6.2f), Vector3(-9.0f, ROOF, 1.0f) }) {
+		props::lightning_rod(b, p, 2.2f);
+	}
+	props::antenna(b, Vector3(3.0f, ROOF, 5.5f), 4.5f);
+	props::antenna(b, Vector3(-1.5f, ROOF + 2.7f, -4.6f), 3.0f);
+	for (const Vector3 &p : { Vector3(1.5f, ROOF, 6.3f), Vector3(-9.3f, ROOF, -2.0f) }) {
+		b.pipe(p, p + Vector3(0.0f, 0.75f, 0.0f), 0.025f, "steel");
+	}
+	props::satellite_dish(b, Vector3(1.5f, ROOF + 0.75f, 6.3f), PI + 0.4f);
+	props::satellite_dish(b, Vector3(-9.3f, ROOF + 0.75f, -2.0f), PI * 0.5f);
+	k.steam(Vector3(6.0f, ROOF + 1.45f, 3.5f), Vector3(0.15f, 1.0f, 0.0f), 0.5f, false);
+	k.steam(Vector3(-7.5f, ROOF + 1.45f, -4.5f), Vector3(0.15f, 1.0f, 0.0f), 0.4f, false);
+	k.sound_loop(Vector3(6.0f, ROOF + 1.0f, 3.5f), "hum", -18.0f, 10.0f);
+
+	props::tec_chimney(b, Vector3(320.0f, 0.0f, -210.0f), 180.0f, 8.0f);
+	props::tec_chimney(b, Vector3(350.0f, 0.0f, -180.0f), 180.0f, 8.0f);
+	props::tec_chimney(b, Vector3(-260.0f, 0.0f, -300.0f), 150.0f, 7.0f);
+	fx::smoke_plume(b.dynamic_root, g.get_materials(), Vector3(320.0f, 181.0f, -210.0f), 5.0f, Vector3(-0.5f, 0.3f, 0.6f), Color(0.75f, 0.72f, 0.72f, 0.5f));
+	fx::smoke_plume(b.dynamic_root, g.get_materials(), Vector3(350.0f, 181.0f, -180.0f), 5.0f, Vector3(-0.5f, 0.3f, 0.6f), Color(0.75f, 0.72f, 0.72f, 0.5f));
+	fx::smoke_plume(b.dynamic_root, g.get_materials(), Vector3(-260.0f, 151.0f, -300.0f), 4.5f, Vector3(-0.5f, 0.3f, 0.6f), Color(0.7f, 0.68f, 0.68f, 0.45f));
+	fx::birds(b.dynamic_root, g.get_materials(), Vector3(0.0f, 70.0f, 0.0f), Vector3(90.0f, 12.0f, 90.0f), Vector3(1.0f, 0.0f, 0.35f));
+	fx::birds(b.dynamic_root, g.get_materials(), Vector3(-60.0f, 30.0f, 40.0f), Vector3(50.0f, 6.0f, 50.0f), Vector3(-0.4f, 0.0f, 1.0f));
+	k.fog(Vector3(0.0f, 0.3f, -18.0f), Vector3(36.0f, 0.2f, 14.0f), 0.6f);
+	k.fog(Vector3(0.0f, 0.3f, 24.0f), Vector3(36.0f, 0.2f, 9.0f), 0.6f);
+	k.leaves(Vector3(-25.0f, 6.0f, 0.0f), Vector3(10.0f, 2.0f, 25.0f), 45);
+	k.leaves(Vector3(25.0f, 6.0f, 15.0f), Vector3(10.0f, 2.0f, 15.0f), 30);
 	Rng tr(21);
 	for (int i = 0; i < 20; i++) {
 		Vector3 p(tr.range(-37.0f, 37.0f), 0.0f, tr.range(-32.0f, 32.0f));
@@ -322,7 +407,17 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 		if (std::fabs(p.x) < 4.0f && p.z < -10.0f) {
 			continue;
 		}
-		b.tree(p, tr.range(6.0f, 9.0f));
+		if (std::fabs(p.x + 27.0f) < 3.0f && std::fabs(p.z + 3.0f) < 3.0f) {
+			continue;
+		}
+		if (p.x < -12.0f && p.x > -25.0f && p.z > -12.0f && p.z < -3.0f) {
+			continue;
+		}
+		if (tr.chance(0.65f)) {
+			props::birch(b, p, tr.range(8.0f, 12.0f), uint32_t(i) * 11u + 5u);
+		} else {
+			b.tree(p, tr.range(6.0f, 9.0f));
+		}
 	}
 	for (const Vector3 &p : { Vector3(-12.0f, 0.0f, 12.0f), Vector3(12.0f, 0.0f, 12.0f), Vector3(-2.5f, 0.0f, -14.0f), Vector3(14.0f, 0.0f, -10.0f), Vector3(-14.0f, 0.0f, -10.0f) }) {
 		k.street_lamp(p, PI * 0.5f);
@@ -348,10 +443,12 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	resident->node = memnew(Node3D);
 	b.dynamic_root->add_child(resident->node);
 	HumanoidLook look;
+	look.outfit = HumanoidLook::OUTFIT_CIVIL;
 	look.torso = "jacket_resident";
+	look.legs = "jeans";
 	look.cap = false;
-	look.hair = false;
-	look.hat = "black";
+	look.hair = true;
+	look.bag = true;
 	resident->rig.build(resident->node, g.get_materials(), look);
 	resident->node->set_visible(false);
 
@@ -448,4 +545,4 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	};
 }
 
-} // namespace urbex
+}

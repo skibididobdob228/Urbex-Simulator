@@ -30,6 +30,14 @@ private:
 	godot::Node3D *head = nullptr;
 	godot::Camera3D *camera = nullptr;
 	godot::SpotLight3D *flashlight = nullptr;
+	godot::SpotLight3D *flashlight_spill = nullptr;
+	godot::Node3D *viewmodel = nullptr;
+	godot::Node3D *torch_arm = nullptr;
+	godot::Node3D *phone_arm = nullptr;
+	float torch_blend = 0.0f;
+	float phone_blend = 1.0f;
+	godot::Vector2 sway;
+	godot::Vector2 sway_target;
 	godot::CollisionShape3D *collider = nullptr;
 	godot::Ref<godot::CapsuleShape3D> capsule;
 
@@ -62,8 +70,10 @@ private:
 	Interactable *focus = nullptr;
 	godot::Dictionary inventory;
 	int photos_taken = 0;
+	bool photo_flash = false;
 
 	void build();
+	void build_viewmodel();
 	void update_focus();
 	void update_crouch(float dt);
 	void update_flashlight(float dt);
@@ -97,6 +107,7 @@ public:
 	bool is_crouching() const { return crouching; }
 	bool is_flashlight_on() const { return flashlight_on && battery > 0.0f; }
 	bool is_aiming() const { return aiming; }
+	bool is_photo_flash() const { return photo_flash; }
 	float get_stamina() const { return stamina; }
 	float get_battery() const { return battery; }
 	float get_noise_radius() const { return noise_radius; }
@@ -116,4 +127,4 @@ public:
 	void make_noise(float radius);
 };
 
-} // namespace urbex
+}

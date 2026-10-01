@@ -2,6 +2,7 @@
 
 #include "actors/guard.h"
 #include "actors/player.h"
+#include "core/effects.h"
 #include "core/game.h"
 #include "security/devices.h"
 #include "ui/hud.h"
@@ -34,6 +35,11 @@ void initialize_urbex_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_RUNTIME_CLASS(urbex::LaserBarrier);
 	GDREGISTER_RUNTIME_CLASS(urbex::SecurityCamera);
 	GDREGISTER_RUNTIME_CLASS(urbex::PhotoSpot);
+	GDREGISTER_RUNTIME_CLASS(urbex::FxFlicker);
+	GDREGISTER_RUNTIME_CLASS(urbex::FxBeacon);
+	GDREGISTER_RUNTIME_CLASS(urbex::FxSparks);
+	GDREGISTER_RUNTIME_CLASS(urbex::FxDebris);
+	GDREGISTER_RUNTIME_CLASS(urbex::FxFlash);
 	GDREGISTER_RUNTIME_CLASS(urbex::UrbexHud);
 	GDREGISTER_RUNTIME_CLASS(urbex::MainMenu);
 }

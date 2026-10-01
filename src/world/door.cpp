@@ -28,7 +28,7 @@ MeshInstance3D *make_box(Node *parent, const Vector3 &size, const Vector3 &pos, 
 	return mi;
 }
 
-} // namespace
+}
 
 void Door::setup(Style p_style, float p_width, float p_height, const String &name, const Ref<Material> &panel_material, const Ref<Material> &detail_material) {
 	style = p_style;
@@ -352,4 +352,4 @@ void Door::_physics_process(double delta) {
 	update_panel();
 }
 
-} // namespace urbex
+}

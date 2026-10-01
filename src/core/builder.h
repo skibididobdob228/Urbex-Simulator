@@ -96,4 +96,4 @@ private:
 
 godot::Basis basis_looking(const godot::Vector3 &dir);
 
-} // namespace urbex
+}

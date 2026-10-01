@@ -2,6 +2,8 @@
 
 #include "actors/guard.h"
 #include "core/builder.h"
+#include "core/effects.h"
+#include "core/props.h"
 #include "core/level_data.h"
 #include "security/devices.h"
 #include "world/door.h"
@@ -40,10 +42,26 @@ struct Kit {
 	void noisy(const godot::Vector3 &local_center, const godot::Vector3 &size, bool visual = true);
 	void hint(const godot::Vector3 &local_center, const godot::Vector3 &size, const godot::String &text);
 	godot::AABB aabb(const godot::Vector3 &local_center, const godot::Vector3 &size) const;
+
+	void dust(const godot::Vector3 &local_center, const godot::Vector3 &extents, float density = 1.0f);
+	void fog(const godot::Vector3 &local_center, const godot::Vector3 &extents, float density = 1.0f);
+	void drips(const godot::Vector3 &local_top, float fall, float per_second, bool with_puddle);
+	void steam(const godot::Vector3 &local_pos, const godot::Vector3 &local_dir, float strength, bool hiss);
+	void sparks(const godot::Vector3 &local_pos, const godot::String &group, float interval_min = 2.0f, float interval_max = 7.0f);
+	void debris(const godot::Vector3 &local_pos);
+	void fire_barrel(const godot::Vector3 &local_pos);
+	void candles(const godot::Vector3 &local_center, float radius);
+	FxFlicker *flicker(const godot::Vector3 &local_pos, const godot::Color &color, float range, float energy, FxFlicker::Mode mode, const godot::String &group, bool tube, bool shadow = false);
+	void moths(const godot::Vector3 &local_pos);
+	void leaves(const godot::Vector3 &local_center, const godot::Vector3 &extents, int amount);
+	void sound_loop(const godot::Vector3 &local_pos, const char *sound, float volume_db, float max_distance);
+	void decal(const char *texture, const godot::Vector3 &local_pos, const godot::Vector3 &local_normal, const godot::Vector2 &size, float angle, float opacity = 1.0f);
+	FxBeacon *beacon(const godot::Vector3 &local_pos, const godot::Color &a, const godot::Color &b2, bool always, bool alternate);
+	void tags(const godot::Vector3 &local_pos, const godot::Vector3 &local_normal, int index, float height);
 	void objective_photo(const godot::String &id, const godot::String &title, bool optional = false);
 	void objective_item(const godot::String &id, const godot::String &title, bool optional = false);
 	void objective_action(const godot::String &id, const godot::String &title, bool optional = false);
 	void objective_reach(const godot::String &id, const godot::String &title, const godot::AABB &zone, bool optional = false);
 };
 
-} // namespace urbex
+}

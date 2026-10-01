@@ -1,10 +1,16 @@
 #include "actors/player.h"
 
 #include "core/common.h"
+#include "core/effects.h"
 #include "core/game.h"
+#include "core/materials.h"
 #include "world/interactable.h"
 
+#include <godot_cpp/classes/box_mesh.hpp>
+#include <godot_cpp/classes/capsule_mesh.hpp>
+#include <godot_cpp/classes/cylinder_mesh.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/mesh_instance3d.hpp>
 #include <godot_cpp/classes/input.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/light3d.hpp>
@@ -24,7 +30,7 @@ constexpr float STAND_HEIGHT = 1.75f;
 constexpr float CROUCH_HEIGHT = 1.0f;
 constexpr float RADIUS = 0.32f;
 constexpr float GRAVITY = 13.0f;
-} // namespace
+}
 
 void UrbexPlayer::_ready() {
 	if (Engine::get_singleton()->is_editor_hint()) {
@@ -64,14 +70,94 @@ void UrbexPlayer::build() {
 	flashlight = memnew(SpotLight3D);
 	flashlight->set_color(Color(1.0f, 0.94f, 0.82f));
 	flashlight->set_param(Light3D::PARAM_RANGE, 26.0f);
-	flashlight->set_param(Light3D::PARAM_ENERGY, 4.5f);
-	flashlight->set_param(Light3D::PARAM_SPOT_ANGLE, 26.0f);
-	flashlight->set_param(Light3D::PARAM_SPOT_ATTENUATION, 0.9f);
+	flashlight->set_param(Light3D::PARAM_ENERGY, 3.4f);
+	flashlight->set_param(Light3D::PARAM_SPOT_ANGLE, 21.0f);
+	flashlight->set_param(Light3D::PARAM_SPOT_ATTENUATION, 0.65f);
 	flashlight->set_param(Light3D::PARAM_VOLUMETRIC_FOG_ENERGY, 0.6f);
 	flashlight->set_shadow(true);
-	flashlight->set_position(Vector3(0.18f, -0.15f, 0.0f));
+	flashlight->set_position(Vector3(-0.16f, -0.14f, -0.32f));
 	flashlight->set_visible(false);
 	camera->add_child(flashlight);
+
+	flashlight_spill = memnew(SpotLight3D);
+	flashlight_spill->set_color(Color(1.0f, 0.92f, 0.8f));
+	flashlight_spill->set_param(Light3D::PARAM_RANGE, 14.0f);
+	flashlight_spill->set_param(Light3D::PARAM_ENERGY, 0.7f);
+	flashlight_spill->set_param(Light3D::PARAM_SPOT_ANGLE, 44.0f);
+	flashlight_spill->set_param(Light3D::PARAM_SPOT_ATTENUATION, 1.6f);
+	flashlight_spill->set_param(Light3D::PARAM_SPECULAR, 0.2f);
+	flashlight->add_child(flashlight_spill);
+	build_viewmodel();
+}
+
+void UrbexPlayer::build_viewmodel() {
+	UrbexGame *game = UrbexGame::get_singleton();
+	if (!game) {
+		return;
+	}
+	const MaterialLibrary &m = game->get_materials();
+	viewmodel = memnew(Node3D);
+	camera->add_child(viewmodel);
+	int priority = 1;
+	auto part = [&](Node3D *parent, const Ref<Mesh> &mesh, const Vector3 &pos, const Vector3 &rot, const char *mat) -> Ref<StandardMaterial3D> {
+		Ref<StandardMaterial3D> base = m.get(mat);
+		Ref<StandardMaterial3D> vm = base->duplicate();
+		vm->set_flag(BaseMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
+		vm->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
+		vm->set_render_priority(priority++);
+		MeshInstance3D *mi = memnew(MeshInstance3D);
+		mi->set_mesh(mesh);
+		mi->set_material_override(vm);
+		mi->set_cast_shadows_setting(GeometryInstance3D::SHADOW_CASTING_SETTING_OFF);
+		mi->set_transform(Transform3D(Basis::from_euler(rot), pos));
+		parent->add_child(mi);
+		return vm;
+	};
+	auto capsule = [](float r, float h) {
+		Ref<CapsuleMesh> c;
+		c.instantiate();
+		c->set_radius(r);
+		c->set_height(h);
+		c->set_radial_segments(10);
+		c->set_rings(3);
+		return c;
+	};
+	auto box = [](const Vector3 &size) {
+		Ref<BoxMesh> b;
+		b.instantiate();
+		b->set_size(size);
+		return b;
+	};
+	auto cyl = [](float r, float h) {
+		Ref<CylinderMesh> c;
+		c.instantiate();
+		c->set_top_radius(r);
+		c->set_bottom_radius(r);
+		c->set_height(h);
+		c->set_radial_segments(12);
+		return c;
+	};
+
+	phone_arm = memnew(Node3D);
+	phone_arm->set_position(Vector3(0.2f, -0.24f, -0.34f));
+	viewmodel->add_child(phone_arm);
+	part(phone_arm, capsule(0.042f, 0.34f), Vector3(0.06f, -0.08f, 0.13f), Vector3(1.15f, 0.35f, 0.0f), "jacket_resident");
+	part(phone_arm, capsule(0.04f, 0.12f), Vector3(0.0f, -0.01f, 0.0f), Vector3(0.2f, 0.0f, 0.15f), "rubber");
+	part(phone_arm, box(Vector3(0.075f, 0.15f, 0.01f)), Vector3(-0.02f, 0.03f, -0.025f), Vector3(-0.25f, -0.15f, 0.0f), "black");
+	Ref<StandardMaterial3D> screen = part(phone_arm, box(Vector3(0.066f, 0.134f, 0.002f)), Vector3(-0.02f, 0.031f, -0.019f), Vector3(-0.25f, -0.15f, 0.0f), "phone_screen");
+	screen->set_albedo(Color(0.08f, 0.1f, 0.16f));
+	screen->set_emission(Color(0.25f, 0.35f, 0.55f));
+	screen->set_emission_energy_multiplier(0.6f);
+
+	torch_arm = memnew(Node3D);
+	torch_arm->set_position(Vector3(-0.19f, -0.6f, -0.38f));
+	viewmodel->add_child(torch_arm);
+	part(torch_arm, capsule(0.042f, 0.36f), Vector3(-0.05f, -0.08f, 0.15f), Vector3(1.2f, -0.3f, 0.0f), "jacket_resident");
+	part(torch_arm, capsule(0.04f, 0.12f), Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -0.2f), "rubber");
+	part(torch_arm, cyl(0.022f, 0.19f), Vector3(0.02f, 0.03f, -0.07f), Vector3(PI * 0.5f, 0.0f, 0.0f), "black");
+	part(torch_arm, cyl(0.03f, 0.04f), Vector3(0.02f, 0.03f, -0.17f), Vector3(PI * 0.5f, 0.0f, 0.0f), "black");
+	part(torch_arm, cyl(0.026f, 0.005f), Vector3(0.02f, 0.03f, -0.19f), Vector3(PI * 0.5f, 0.0f, 0.0f), "lamp_cold");
+	torch_arm->set_visible(false);
 }
 
 void UrbexPlayer::place(const Vector3 &position, float p_yaw) {
@@ -166,6 +252,8 @@ void UrbexPlayer::_unhandled_input(const Ref<InputEvent> &event) {
 		UrbexGame *game = UrbexGame::get_singleton();
 		float sens = mouse_sensitivity * (game ? game->get_sensitivity() : 1.0f) * (aiming ? 0.55f : 1.0f);
 		Vector2 rel = motion->get_relative();
+		sway_target += Vector2(rel.x, rel.y) * 0.00035f;
+		sway_target = Vector2(clampf(sway_target.x, -0.04f, 0.04f), clampf(sway_target.y, -0.04f, 0.04f));
 		yaw = wrap_angle(yaw - rel.x * sens);
 		pitch = clampf(pitch - rel.y * sens, -1.5f, 1.45f);
 		set_rotation(Vector3(0.0f, yaw, 0.0f));
@@ -209,16 +297,17 @@ void UrbexPlayer::update_crouch(float dt) {
 void UrbexPlayer::update_flashlight(float dt) {
 	if (flashlight_on && battery > 0.0f) {
 		battery = std::max(0.0f, battery - dt / 420.0f);
-		float energy = 4.5f;
+		float energy = 3.4f;
 		if (battery < 0.15f) {
 			flicker_timer -= dt;
 			if (flicker_timer <= 0.0f) {
 				flicker_timer = 0.05f + float(Engine::get_singleton()->get_physics_frames() % 13) * 0.02f;
 			}
-			energy = (Engine::get_singleton()->get_physics_frames() % 9 < 2) ? 0.4f : 4.5f * (0.4f + battery * 4.0f);
+			energy = (Engine::get_singleton()->get_physics_frames() % 9 < 2) ? 0.4f : 3.4f * (0.4f + battery * 4.0f);
 		}
 		flashlight->set_param(Light3D::PARAM_ENERGY, energy);
 		flashlight->set_visible(true);
+		flashlight_spill->set_param(Light3D::PARAM_ENERGY, energy * 0.2f);
 		if (battery <= 0.0f) {
 			flashlight_on = false;
 			UrbexGame::get_singleton()->notify("Фонарик сел. Ищи батарейки"_u, Color(1.0f, 0.7f, 0.4f));
@@ -259,6 +348,9 @@ void UrbexPlayer::emit_step(float radius) {
 	float pitch_shift = 0.92f + float((step_index * 7) % 5) * 0.04f;
 	String name = String(noisy ? "step_glass_" : "step_") + String::num_int64(step_index % 4);
 	game->play_sound(name, feet, volume, pitch_shift, 30.0f);
+	if (gait == GAIT_RUN && game->get_level_root()) {
+		fx::dust_puff(game->get_level_root(), game->get_materials(), feet + Vector3(0.0f, 0.08f, 0.0f), 0.45f);
+	}
 	noise_radius = std::max(noise_radius, radius);
 	game->emit_noise(feet, radius, true);
 }
@@ -270,6 +362,13 @@ void UrbexPlayer::take_photo() {
 	game->play_sound("shutter", get_eye_position(), -4.0f);
 	noise_radius = std::max(noise_radius, 2.5f);
 	game->emit_noise(get_global_position(), 2.5f, true);
+	if (photo_flash && game->get_level_root()) {
+		FxFlash *flash = memnew(FxFlash);
+		flash->setup(9.0f, 16.0f, 0.18f, Color(0.95f, 0.97f, 1.0f));
+		game->get_level_root()->add_child(flash);
+		flash->set_global_position(get_eye_position() + get_look_direction() * 0.4f);
+		game->emit_noise(get_global_position(), 14.0f, true);
+	}
 	game->on_photo(camera);
 }
 
@@ -449,6 +548,11 @@ void UrbexPlayer::_physics_process(double delta) {
 			game->notify("Фонарик разряжен"_u, Color(1.0f, 0.7f, 0.4f));
 		}
 	}
+	if (active && in->is_action_just_pressed("camera_flash")) {
+		photo_flash = !photo_flash;
+		game->play_sound("click", get_eye_position(), -8.0f, 1.4f);
+		game->notify(photo_flash ? "Вспышка включена: снимки ярче, но охрана увидит вспышку издалека"_u : "Вспышка выключена"_u, Color(0.8f, 0.85f, 0.95f));
+	}
 	if (active && aiming && in->is_action_just_pressed("photo") && photo_cooldown <= 0.0f) {
 		take_photo();
 	}
@@ -474,6 +578,18 @@ void UrbexPlayer::_process(double delta) {
 	head->set_position(Vector3(0.0f, head_y, 0.0f) + offset);
 	aim_blend = approach(aim_blend, aiming ? 1.0f : 0.0f, dt * 6.0f);
 	camera->set_fov(lerpf(75.0f, 42.0f, aim_blend));
+	if (viewmodel) {
+		sway = sway.lerp(sway_target, 1.0f - std::exp(-10.0f * dt));
+		sway_target = sway_target.lerp(Vector2(), 1.0f - std::exp(-6.0f * dt));
+		Vector3 bob(std::sin(bob_phase) * 0.012f * bob_amount, -std::fabs(std::cos(bob_phase)) * 0.016f * bob_amount, 0.0f);
+		viewmodel->set_position(Vector3(-sway.x, sway.y, 0.0f) + bob);
+		torch_blend = approach(torch_blend, is_flashlight_on() ? 1.0f : 0.0f, dt * 4.0f);
+		torch_arm->set_visible(torch_blend > 0.01f);
+		torch_arm->set_position(Vector3(-0.19f, lerpf(-0.6f, -0.25f, torch_blend), -0.38f));
+		phone_blend = approach(phone_blend, (aiming || dead || !controls_enabled) ? 0.0f : 1.0f, dt * 5.0f);
+		phone_arm->set_visible(phone_blend > 0.01f);
+		phone_arm->set_position(Vector3(0.2f, lerpf(-0.6f, -0.25f, phone_blend), -0.34f));
+	}
 }
 
-} // namespace urbex
+}

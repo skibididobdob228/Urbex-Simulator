@@ -356,7 +356,86 @@ std::vector<float> switch_sound() {
 	return s;
 }
 
-} // namespace
+std::vector<float> buzz_loop() {
+	Rng rng(17);
+	std::vector<float> s(samples_for(1.0f));
+	OnePole hp(80.0f);
+	for (size_t i = 0; i < s.size(); i++) {
+		float t = float(i) / RATE;
+		float v = std::sin(TAU * 100.0f * t) * 0.6f + std::sin(TAU * 200.0f * t) * 0.3f + std::sin(TAU * 300.0f * t) * 0.2f;
+		v = std::clamp(v * 2.2f, -0.7f, 0.7f) + noise(rng) * 0.04f;
+		s[i] = hp.hp(v);
+	}
+	normalize(s, 0.5f);
+	return s;
+}
+
+std::vector<float> spark_sound() {
+	Rng rng(23);
+	std::vector<float> s(samples_for(0.5f));
+	OnePole hp(1800.0f);
+	for (size_t i = 0; i < s.size(); i++) {
+		float t = float(i) / RATE;
+		float env = std::exp(-t * 7.0f);
+		float pop = rng.randf() < 0.02f * env ? rng.range(0.5f, 1.0f) : 0.0f;
+		s[i] = hp.hp(noise(rng)) * env * 0.5f * (0.4f + 0.6f * (std::sin(TAU * 50.0f * t) > 0.0f ? 1.0f : 0.3f)) + pop;
+	}
+	normalize(s, 0.7f);
+	return s;
+}
+
+std::vector<float> crumble_sound() {
+	Rng rng(29);
+	std::vector<float> s(samples_for(1.4f));
+	OnePole lp(2500.0f);
+	for (size_t i = 0; i < s.size(); i++) {
+		float t = float(i) / RATE;
+		float density = 0.004f * std::exp(-t * 1.5f) + 0.0005f;
+		float v = 0.0f;
+		if (rng.randf() < density) {
+			v = rng.range(0.3f, 1.0f);
+		}
+		s[i] = lp.lp(v + noise(rng) * 0.04f * std::exp(-t * 2.0f));
+	}
+	normalize(s, 0.7f);
+	return s;
+}
+
+std::vector<float> fire_loop() {
+	Rng rng(31);
+	float length = 4.0f;
+	int fade = samples_for(0.5f);
+	std::vector<float> s(samples_for(length) + fade);
+	OnePole lp(600.0f);
+	OnePole hp(3000.0f);
+	for (size_t i = 0; i < s.size(); i++) {
+		float roar = lp.lp(noise(rng)) * 0.5f;
+		float crackle = rng.randf() < 0.003f ? rng.range(0.4f, 1.0f) : 0.0f;
+		s[i] = roar + hp.hp(crackle) * 1.5f;
+	}
+	auto out = loop_crossfade(s, fade);
+	normalize(out, 0.6f);
+	return out;
+}
+
+std::vector<float> hiss_loop() {
+	Rng rng(37);
+	float length = 2.0f;
+	int fade = samples_for(0.3f);
+	std::vector<float> s(samples_for(length) + fade);
+	OnePole hp(2000.0f);
+	OnePole lp(7000.0f);
+	for (size_t i = 0; i < s.size(); i++) {
+		float t = float(i) / RATE;
+		float mod = 0.8f + 0.2f * std::sin(TAU * 0.7f * t);
+		s[i] = lp.lp(hp.hp(noise(rng))) * mod;
+	}
+	auto out = loop_crossfade(s, fade);
+	normalize(out, 0.5f);
+	return out;
+}
+
+}
 
 void SoundBank::store(const std::string &name, const std::vector<float> &samples, bool loop) {
 	PackedByteArray data;
@@ -420,6 +499,11 @@ void SoundBank::build() {
 	store("land", impact_sound(71, { 60.0f, 95.0f }, 0.35f, 12.0f, 1.5f));
 	store("click", impact_sound(81, { 3000.0f }, 0.05f, 80.0f, 0.5f));
 	store("spray", step_sound(91, 5200.0f, 3.0f, false));
+	store("buzz", buzz_loop(), true);
+	store("spark", spark_sound());
+	store("crumble", crumble_sound());
+	store("fire", fire_loop(), true);
+	store("hiss", hiss_loop(), true);
 }
 
 Ref<AudioStreamWAV> SoundBank::get(const std::string &name) const {
@@ -436,4 +520,4 @@ Ref<AudioStreamWAV> SoundBank::variant(const std::string &base, int index) const
 	return get(base + "_" + std::to_string(((index % n) + n) % n));
 }
 
-} // namespace urbex
+}

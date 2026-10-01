@@ -70,7 +70,7 @@ const char *const LINES_CONCIERGE_CALL[] = {
 	"Алло, охрана? У нас посторонний в подъезде!",
 };
 
-} // namespace
+}
 
 void Guard::setup(Kind p_kind, const String &name, const MaterialLibrary &materials, bool with_flashlight) {
 	kind = p_kind;
@@ -94,18 +94,23 @@ void Guard::setup(Kind p_kind, const String &name, const MaterialLibrary &materi
 	add_child(visual);
 
 	HumanoidLook look;
+	look.flashlight = with_flashlight;
 	switch (kind) {
 		case KIND_CHOP:
 		case KIND_WATCHMAN:
+			look.outfit = HumanoidLook::OUTFIT_GUARD;
 			look.back_text = "ОХРАНА"_u;
 			break;
 		case KIND_GBR:
-			look.torso = "armor";
+			look.outfit = HumanoidLook::OUTFIT_GBR;
+			look.torso = "uniform";
 			look.back_text = "ГБР"_u;
 			look.text_color = Color(0.95f, 0.95f, 0.95f);
 			break;
 		case KIND_CONCIERGE:
+			look.outfit = HumanoidLook::OUTFIT_CONCIERGE;
 			look.torso = "cardigan";
+			look.legs = "pants";
 			look.cap = false;
 			look.hair = true;
 			look.scale = 0.94f;
@@ -759,6 +764,7 @@ void Guard::_process(double delta) {
 		pitch = std::atan2(to.y, flat(to).length());
 	}
 	look_pivot->set_rotation(Vector3(pitch, look_offset, 0.0f));
+	rig.look(look_offset * 0.8f, pitch * 0.5f);
 	float speed = flat(get_real_velocity()).length();
 	bool should_sit = sit_at_post && state == STATE_PATROL && flat(post_position - get_global_position()).length() < 0.7f && speed < 0.3f;
 	if (should_sit != sitting) {
@@ -784,4 +790,4 @@ void Guard::_process(double delta) {
 	}
 }
 
-} // namespace urbex
+}

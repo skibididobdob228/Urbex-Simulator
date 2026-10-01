@@ -121,4 +121,4 @@ public:
 	bool in_frame(godot::Node3D *camera, godot::Vector3 forward) const;
 };
 
-} // namespace urbex
+}

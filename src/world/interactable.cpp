@@ -222,4 +222,4 @@ void ReedSwitch::interact(UrbexPlayer *player) {
 	game->notify("Магнит прилеплен к геркону. Теперь дверь можно открыть без тревоги"_u, Color(0.6f, 0.9f, 0.6f));
 }
 
-} // namespace urbex
+}

@@ -78,6 +78,9 @@ struct LevelData {
 	float kill_height = -40.0f;
 	float gbr_delay = 60.0f;
 	godot::Vector3 gbr_spawn;
+	bool gbr_van = false;
+	godot::Vector3 gbr_van_position;
+	float gbr_van_yaw = 0.0f;
 	std::vector<godot::Vector3> gbr_search_points;
 	godot::String legal_note;
 	Ambience ambience = Ambience::NightOutdoor;
@@ -85,4 +88,4 @@ struct LevelData {
 	std::function<void(double)> tick;
 };
 
-} // namespace urbex
+}

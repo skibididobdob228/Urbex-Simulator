@@ -153,4 +153,4 @@ public:
 	void interact(UrbexPlayer *player) override;
 };
 
-} // namespace urbex
+}

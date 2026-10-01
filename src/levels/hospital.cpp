@@ -229,7 +229,8 @@ void build_hub(Kit &k) {
 		float r = b.rng.range(1.5f, 7.0f);
 		b.rubble(Vector3(std::sin(a) * r, GROUND_TOP, std::cos(a) * r), 1.0f, 10, "concrete");
 	}
-	b.visual_box(Vector3(2.0f, GROUND_TOP + 0.01f, -2.0f), Vector3(3.0f, 0.02f, 2.2f), "water", Basis(Vector3(0, 1, 0), 0.4f), false);
+	props::puddle(b, Vector3(2.0f, GROUND_TOP, -2.0f), 2.2f, 5u);
+	props::puddle(b, Vector3(1.0f, GROUND_TOP, -1.2f), 1.2f, 9u);
 }
 
 void build_booth(Kit &k, const Vector3 &c) {
@@ -253,7 +254,170 @@ void build_booth(Kit &k, const Vector3 &c) {
 	k.shadow_zone(c + Vector3(0, 1.4f, 0), Vector3(w, h, d));
 }
 
-} // namespace
+void wing_windows(LevelBuilder &b, uint32_t seed) {
+	Rng r(seed);
+	for (int n = 0; n < FLOORS; n++) {
+		for (int side : { -1, 1 }) {
+			for (int i = 0; i < 6; i++) {
+				if (!r.chance(0.35f)) {
+					continue;
+				}
+				float off = 2.5f + 5.0f * float(i);
+				props::window_frame(b, Vector3(float(side) * HW, FH * float(n) + 1.7f, HUB_A + off), PI * 0.5f, 1.55f, 1.55f, r.range(0.4f, 0.95f));
+			}
+		}
+	}
+}
+
+void wing_dressing(Kit &k, float angle, uint32_t seed) {
+	LevelBuilder &b = k.b;
+	b.push_yaw(Vector3(), angle);
+	const float A = HUB_A;
+	wing_windows(b, seed);
+	for (int n = 0; n < FLOORS; n++) {
+		float y = floor_top(n);
+		k.dust(Vector3(0.0f, y + 1.5f, A + 15.0f), Vector3(1.3f, 1.3f, 14.0f), 0.8f);
+		k.dust(Vector3(3.2f, y + 1.5f, A + 20.0f), Vector3(1.6f, 1.3f, 9.0f), 0.5f);
+		k.tags(Vector3(CW - 0.12f, y + 1.45f, A + 5.0f + float(n) * 7.5f), Vector3(-1, 0, 0), int(seed) + n * 3, 0.3f);
+		k.tags(Vector3(CW - 0.12f, y + 1.7f, A + 22.5f - float(n) * 5.0f), Vector3(-1, 0, 0), int(seed) + n * 3 + 1, 0.25f);
+		props::hanging_cable(b, Vector3(-0.8f, FH * float(n + 1) - 0.32f, A + 8.0f + float(n) * 4.0f), Vector3(0.6f, FH * float(n + 1) - 0.32f, A + 11.0f + float(n) * 4.0f), 0.6f + float(n) * 0.2f);
+		props::radiator(b, Vector3(HW - 0.22f, y, A + 10.0f), -PI * 0.5f, 8);
+		props::radiator(b, Vector3(-HW + 0.22f, y, A + 12.5f), PI * 0.5f, 10);
+		k.decal("decal_streak", Vector3(float(n % 2 == 0 ? 1 : -1) * (HW + 0.16f), y + 0.8f, A + 7.5f + float(n) * 5.0f), Vector3(float(n % 2 == 0 ? 1 : -1), 0, 0), Vector2(1.4f, 2.6f), 0.0f, 0.8f);
+		k.decal("decal_water", Vector3(0.0f, y + 0.02f, A + 18.0f - float(n) * 3.0f), Vector3(0, 1, 0), Vector2(2.2f, 2.2f), float(n), 0.7f);
+	}
+	k.debris(Vector3(0.0f, FH - 0.35f, A + 13.0f + float(seed % 7)));
+	k.debris(Vector3(0.4f, 2.0f * FH - 0.35f, A + 24.0f));
+	b.pop();
+}
+
+void hospital_dressing(Kit &k) {
+	LevelBuilder &b = k.b;
+	const float A = HUB_A;
+
+	k.dust(Vector3(0.0f, GROUND_TOP + 1.7f, 0.0f), Vector3(6.5f, 1.6f, 6.5f), 0.7f);
+	k.dust(Vector3(0.0f, FH + 1.7f, 0.0f), Vector3(6.5f, 1.6f, 6.5f), 0.5f);
+	k.drips(Vector3(2.2f, FH - 0.2f, -2.1f), FH - 0.25f, 1.6f, false);
+	k.drips(Vector3(1.4f, FH - 0.2f, -1.4f), FH - 0.25f, 0.7f, false);
+	k.debris(Vector3(-2.0f, FH - 0.35f, 2.0f));
+	k.decal("decal_water", Vector3(2.0f, FH - 0.16f, -2.0f), Vector3(0, -1, 0), Vector2(3.0f, 3.0f), 0.4f, 0.9f);
+	props::stretcher(b, Vector3(-5.5f, GROUND_TOP, -1.5f), 0.9f);
+	props::wheelchair(b, Vector3(-1.2f, GROUND_TOP, 5.2f), 2.3f, true);
+	props::chair(b, Vector3(-3.6f, GROUND_TOP, 3.2f), 0.4f, false);
+	props::chair(b, Vector3(-2.0f, GROUND_TOP, 3.0f), 2.2f, true);
+	props::cabinet(b, Vector3(-5.4f, GROUND_TOP, 4.4f), PI * 0.5f + 0.5f, true);
+	props::wall_clock(b, Vector3(-3.0f, 2.6f, 4.55f), PI);
+	props::bottles(b, Vector3(4.0f, GROUND_TOP, 2.5f), 5, 17);
+	for (int i = 0; i < 6; i++) {
+		float a = float(i) * PI / 3.0f;
+		Vector3 c(std::sin(a) * 5.0f, 0.0f, std::cos(a) * 5.0f);
+		if (i % 2 == 0) {
+			props::hanging_cable(b, c + Vector3(0.0f, ROOF - 0.32f, 0.0f), c * 0.3f + Vector3(0.0f, ROOF - 0.32f, 0.0f), 1.4f);
+		}
+	}
+	for (float deg : { 90.0f, 210.0f, 330.0f }) {
+		b.push_yaw(Vector3(), deg * DEG);
+		for (int n = 0; n < FLOORS; n++) {
+			if ((deg == 210.0f && n == 0) || (deg == 90.0f && n == 1)) {
+				continue;
+			}
+			for (float x : { -2.5f, 2.5f }) {
+				if (std::fmod(deg + float(n) * 50.0f + x, 3.0f) < 1.4f) {
+					props::window_frame(b, Vector3(x, FH * float(n) + 1.7f, HUB_A), 0.0f, 1.55f, 1.55f, 0.6f);
+				}
+			}
+		}
+		b.pop();
+	}
+
+	wing_dressing(k, 270.0f * DEG, 3);
+	wing_dressing(k, 30.0f * DEG, 7);
+	wing_dressing(k, 150.0f * DEG, 12);
+
+	b.push_yaw(Vector3(), 270.0f * DEG);
+	k.drips(Vector3(-3.2f, ROOF - 0.2f, A + 20.3f), ROOF - 0.2f + 3.0f, 2.2f, false);
+	k.drips(Vector3(-2.4f, ROOF - 0.2f, A + 19.4f), ROOF - 0.2f + 3.0f, 0.8f, false);
+	k.fog(Vector3(-3.2f, -2.75f, A + 20.0f), Vector3(1.2f, 0.15f, 1.3f), 3.0f);
+	k.sound_loop(Vector3(-3.2f, -2.5f, A + 20.0f), "drip", -6.0f, 16.0f);
+	for (int n = 0; n < FLOORS; n++) {
+		props::rebar(b, Vector3(-1.8f, floor_top(n + 1) - 0.15f, A + 20.0f), Vector3(-1, 0, 0), 5, 31u + uint32_t(n));
+	}
+	props::rebar(b, Vector3(0.0f, 2.0f * FH - 0.15f, A + 25.0f), Vector3(0, 0, 1), 7, 55u);
+	props::rebar(b, Vector3(0.0f, 2.0f * FH - 0.15f, A + 27.0f), Vector3(0, 0, -1), 7, 56u);
+	props::cabinet(b, Vector3(4.55f, GROUND_TOP, A + 9.5f), -PI * 0.5f, false);
+	props::cabinet(b, Vector3(4.55f, GROUND_TOP, A + 10.4f), -PI * 0.5f, true);
+	props::table(b, Vector3(3.0f, GROUND_TOP, A + 11.0f), 0.2f, 1.2f, 0.7f);
+	props::chair(b, Vector3(2.6f, GROUND_TOP, A + 12.0f), 3.0f, true);
+	props::hospital_bed(b, Vector3(3.3f, FH, A + 20.5f), PI * 0.5f + 0.15f, true);
+	props::wheelchair(b, Vector3(3.0f, FH, A + 23.0f), 1.0f, false);
+	b.pop();
+
+	b.push_yaw(Vector3(), 30.0f * DEG);
+	for (int i = 0; i < 4; i++) {
+		props::hospital_bed(b, Vector3(3.25f, GROUND_TOP, A + 9.0f + float(i) * 5.0f), PI * 0.5f + (i % 2 == 0 ? 0.05f : -0.12f), i != 2);
+	}
+	props::wheelchair(b, Vector3(0.75f, GROUND_TOP, A + 16.5f), 0.4f, true);
+	k.fire_barrel(Vector3(-3.9f, GROUND_TOP, A + 18.6f));
+	props::mattress(b, Vector3(-2.9f, GROUND_TOP, A + 16.4f), PI * 0.5f + 0.1f);
+	props::cardboard(b, Vector3(-4.0f, GROUND_TOP, A + 15.9f), 0.3f);
+	props::bottles(b, Vector3(-2.6f, GROUND_TOP, A + 18.9f), 7, 5);
+	props::chair(b, Vector3(-2.7f, GROUND_TOP, A + 19.3f), 2.5f, false);
+	props::kettle(b, Vector3(-3.2f, GROUND_TOP, A + 19.4f));
+	k.decal("decal_soot", Vector3(-4.85f, 1.9f, A + 18.6f), Vector3(1, 0, 0), Vector2(1.6f, 2.4f), 0.0f, 0.9f);
+	k.decal("decal_soot", Vector3(-3.9f, FH - 0.16f, A + 18.6f), Vector3(0, -1, 0), Vector2(2.4f, 2.4f), 0.0f, 0.9f);
+	b.graffiti(Vector3(-3.2f, 1.7f, A + 15.12f), Vector3(0, 0, 1), "НЕ ВХОДИТЬ ЖИВУ ТУТ"_u, 0.22f);
+	props::rebar(b, Vector3(-3.2f, FH - 0.15f, A + 11.0f), Vector3(0, 0, 1), 6, 77u);
+	props::rebar(b, Vector3(1.6f, 2.0f * FH - 0.15f, A + 18.0f), Vector3(0, 0, 1), 9, 78u);
+	props::rebar(b, Vector3(1.6f, 2.0f * FH - 0.15f, A + 23.0f), Vector3(0, 0, -1), 9, 79u);
+	k.drips(Vector3(1.0f, ROOF - 0.2f, A + 20.5f), ROOF - 0.2f - FH, 1.2f, true);
+	k.drips(Vector3(2.8f, ROOF - 0.2f, A + 19.2f), ROOF - 0.2f - FH, 0.6f, false);
+	props::cabinet(b, Vector3(-4.55f, FH, A + 21.0f), PI * 0.5f, true);
+	props::table(b, Vector3(-3.3f, FH, A + 23.4f), 0.0f, 1.4f, 0.8f);
+	b.pop();
+
+	b.push_yaw(Vector3(), 150.0f * DEG);
+	for (int i = 0; i < 3; i++) {
+		props::hospital_bed(b, Vector3(-3.25f, GROUND_TOP, A + 4.0f + float(i) * 10.0f), PI * 0.5f + float(i) * 0.08f, i == 1);
+	}
+	props::stretcher(b, Vector3(3.3f, GROUND_TOP, A + 21.0f), 1.3f);
+	k.candles(Vector3(-3.2f, 2.0f * FH, A + 22.6f), 1.0f);
+	b.graffiti(Vector3(-3.2f, 2.0f * FH + 1.6f, A + 20.12f), Vector3(0, 0, 1), "НИМОСТОР"_u, 0.5f)->set_modulate(Color(0.6f, 0.05f, 0.05f));
+	b.graffiti(Vector3(-3.2f, 2.0f * FH + 1.0f, A + 20.12f), Vector3(0, 0, 1), "он смотрит"_u, 0.18f);
+	props::rebar(b, Vector3(0.0f, FH - 0.15f, A + 20.0f), Vector3(0, 0, 1), 5, 91u);
+	props::rebar(b, Vector3(3.2f, 2.0f * FH - 0.15f, A + 16.0f), Vector3(0, 0, -1), 6, 92u);
+	k.drips(Vector3(0.2f, 2.0f * FH - 0.2f, A + 21.2f), 2.0f * FH - 0.2f - FH, 0.9f, true);
+	props::lockers(b, Vector3(4.7f, GROUND_TOP, A + 9.5f), -PI * 0.5f, 3);
+	b.pop();
+
+	b.push_yaw(Vector3(), 330.0f * DEG);
+	props::pallets(b, Vector3(-3.0f, 0.0f, HUB_A + 4.5f), 0.3f, 4);
+	props::barrel(b, Vector3(1.5f, 0.0f, HUB_A + 3.2f), "rust", false);
+	props::barrel(b, Vector3(2.2f, 0.0f, HUB_A + 3.6f), "metal_blue", false);
+	b.pop();
+
+	props::car(b, Vector3(-71.0f, 0.05f, -16.0f), 0.0f, "car_white", false);
+	props::car(b, Vector3(-75.5f, 0.05f, 40.0f), PI + 0.03f, "car_red", false);
+	props::car(b, Vector3(40.0f, 0.0f, -49.0f), 1.3f, "car_silver", false);
+	props::trash_container(b, Vector3(29.0f, 0.0f, -52.5f), 0.0f);
+	props::lightning_rod(b, Vector3(0.0f, ROOF, 0.0f), 2.5f);
+	k.fog(Vector3(-82.0f, 0.3f, 0.0f), Vector3(8.0f, 0.2f, 70.0f), 0.8f);
+	k.fog(Vector3(0.0f, 0.25f, 55.0f), Vector3(50.0f, 0.15f, 5.0f), 0.8f);
+	k.leaves(Vector3(-55.0f, 6.0f, 0.0f), Vector3(4.0f, 2.0f, 50.0f), 60);
+	k.leaves(Vector3(0.0f, 6.0f, 55.0f), Vector3(50.0f, 2.0f, 4.0f), 60);
+
+	Vector3 booth(34.0f, 0.0f, -54.0f);
+	k.flicker(booth + Vector3(-2.35f, 2.6f, 0.9f), Color(0.85f, 0.95f, 1.0f), 7.0f, 1.3f, FxFlicker::MODE_FLUORESCENT, "booth", true);
+	k.sparks(booth + Vector3(2.25f, 2.25f, 0.6f), "booth", 3.0f, 9.0f);
+	props::hanging_cable(b, booth + Vector3(2.2f, 2.3f, 0.6f), Vector3(45.0f, 6.3f, -67.5f), 1.2f);
+	k.beacon(booth + Vector3(1.6f, 3.05f, -1.4f), Color(1.0f, 0.5f, 0.05f), Color(1.0f, 0.5f, 0.05f), false, false);
+
+	props::tec_chimney(b, Vector3(190.0f, 0.0f, -150.0f), 140.0f, 7.0f);
+	fx::smoke_plume(b.dynamic_root, k.g.get_materials(), Vector3(190.0f, 141.0f, -150.0f), 4.0f, Vector3(0.6f, 0.25f, 0.3f), Color(0.55f, 0.55f, 0.58f, 0.45f));
+	props::tec_chimney(b, Vector3(215.0f, 0.0f, -130.0f), 120.0f, 6.0f);
+	fx::smoke_plume(b.dynamic_root, k.g.get_materials(), Vector3(215.0f, 121.0f, -130.0f), 3.5f, Vector3(0.6f, 0.25f, 0.3f), Color(0.55f, 0.55f, 0.58f, 0.4f));
+}
+
+}
 
 void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	Kit k(b, d, g);
@@ -274,6 +438,9 @@ void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	d.kill_height = -12.0f;
 	d.gbr_delay = 55.0f;
 	d.gbr_spawn = Vector3(23.0f, 0.1f, -58.0f);
+	d.gbr_van = true;
+	d.gbr_van_position = Vector3(19.0f, 0.05f, -68.0f);
+	d.gbr_van_yaw = -PI * 0.5f + 0.15f;
 	d.ambience = Ambience::NightOutdoor;
 	d.nav_bounds = AABB(Vector3(-66.0f, -5.0f, -66.0f), Vector3(132.0f, 22.0f, 132.0f));
 	d.legal_note = "Ховринская больница строилась с 1980 года, была заморожена в 1992-м и снесена в 2018-м. Уровень сделан по мотивам, планировка упрощена."_u;
@@ -369,9 +536,6 @@ void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.pickup(Vector3(-3.0f, FH, A + 22.0f), "medcard", "Медкарта 1984 года"_u, "Пожелтевшая карта из регистратуры, которой так и не было"_u, true, "paper");
 	k.pir(Vector3(-CW + 0.15f, 2.9f, A + 6.0f), Vector3(0, 0.6f, A + 14.0f), 8.0f, "", true, "Старый датчик"_u);
 	k.pir(Vector3(CW - 0.15f, 2.9f, A + 20.0f), Vector3(0, 0.6f, A + 26.0f), 8.0f, "", true, "Старый датчик"_u);
-	for (int i = 0; i < 4; i++) {
-		b.bed_frame(Vector3(3.2f, GROUND_TOP, A + 9.0f + float(i) * 5.0f), PI * 0.5f);
-	}
 	b.graffiti(Vector3(-CW - 0.12f, 1.6f, A + 12.0f), Vector3(-1, 0, 0), "Цой жив"_u, 0.5f);
 	b.graffiti(Vector3(CW + 0.12f, FH + 1.6f, A + 6.0f), Vector3(1, 0, 0), "не ходи на 3 этаж"_u, 0.35f);
 	b.pop();
@@ -383,9 +547,6 @@ void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.noisy(Vector3(0, 0.25f, A + WING_L - 1.5f), Vector3(2.6f, 0.5f, 2.5f));
 	b.graffiti(Vector3(CW + 0.12f, 1.5f, A + 22.0f), Vector3(1, 0, 0), "Лёха + Катя 2009"_u, 0.35f);
 	b.graffiti(Vector3(0.0f, 2.0f, A + WING_L - 0.17f), Vector3(0, 0, -1), "ВЫХОД"_u, 0.6f);
-	for (int i = 0; i < 3; i++) {
-		b.bed_frame(Vector3(-3.2f, GROUND_TOP, A + 4.0f + float(i) * 10.0f), PI * 0.5f);
-	}
 	b.pop();
 
 	const float F = 62.0f;
@@ -439,7 +600,11 @@ void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 		if ((p - booth).length() < 6.0f) {
 			continue;
 		}
-		b.tree(p, tr.range(7.0f, 12.0f));
+		if (tr.chance(0.6f)) {
+			props::birch(b, p, tr.range(8.0f, 13.0f), uint32_t(i) * 13u + 7u);
+		} else {
+			b.tree(p, tr.range(7.0f, 12.0f));
+		}
 	}
 	for (int i = 0; i < 14; i++) {
 		float a = float(i) / 14.0f * 2.0f * PI;
@@ -495,7 +660,9 @@ void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	watchman->set_post(booth + Vector3(0.4f, 0.15f, -0.2f), { yaw_towards(booth, Vector3(23.0f, 0, -62.0f)), yaw_towards(booth, Vector3(0, 0, 0)) }, 7.0f, true);
 	watchman->set_vision(13.0f, 100.0f);
 
+	hospital_dressing(k);
+
 	d.gbr_search_points = { Vector3(0.0f, GROUND_TOP, 0.0f), wa_corr0, wb_corr0, wc_corr0, Vector3(0.0f, FH, 0.0f), wa_corr2, Vector3(-50.0f, 0.0f, 0.0f), Vector3(30.0f, 0.0f, 40.0f) };
 }
 
-} // namespace urbex
+}

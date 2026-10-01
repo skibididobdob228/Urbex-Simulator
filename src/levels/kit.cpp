@@ -1,12 +1,17 @@
 #include "levels/kit.h"
 
 #include "core/game.h"
+#include "core/materials.h"
+
+#include <godot_cpp/classes/audio_stream_player3d.hpp>
 
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/cylinder_mesh.hpp>
 #include <godot_cpp/classes/label3d.hpp>
 #include <godot_cpp/classes/mesh_instance3d.hpp>
 #include <godot_cpp/classes/sphere_mesh.hpp>
+
+#include <cmath>
 
 using namespace godot;
 
@@ -58,7 +63,7 @@ MeshInstance3D *mesh_sphere(Node3D *parent, float radius, const Vector3 &pos, co
 	return mi;
 }
 
-} // namespace
+}
 
 Door *Kit::door(const Vector3 &local_pos, float local_yaw, Door::Style style, float width, float height, const String &name) {
 	const MaterialLibrary &m = g.get_materials();
@@ -227,16 +232,17 @@ ActionPoint *Kit::action(const Vector3 &local_pos, const Vector3 &hitbox, const 
 }
 
 void Kit::street_lamp(const Vector3 &local_pos, float local_yaw, const String &group) {
-	b.cylinder(local_pos, 0.08f, 6.5f, "metal_gray", true, 8);
-	Vector3 arm_dir = yaw_forward(local_yaw);
-	Vector3 head = local_pos + Vector3(0, 6.4f, 0) + arm_dir * 1.2f;
-	b.pipe(local_pos + Vector3(0, 6.3f, 0), head, 0.05f, "metal_gray");
-	b.visual_box(head, Vector3(0.5f, 0.12f, 0.3f), group.is_empty() || g.is_powered(group) ? "lamp_warm" : "plastic_dark", basis_looking(arm_dir), false);
-	OmniLight3D *l = b.omni(head - Vector3(0, 0.3f, 0), Color(1.0f, 0.72f, 0.38f), 15.0f, 1.8f, false);
+	bool lit = group.is_empty() || g.is_powered(group);
+	props::soviet_lamp(b, local_pos, local_yaw, lit);
+	Vector3 head = local_pos + Vector3(0, 6.95f, 0) + yaw_forward(local_yaw) * 1.45f;
+	OmniLight3D *l = b.omni(head - Vector3(0, 0.3f, 0), Color(1.0f, 0.72f, 0.38f), 16.0f, 1.8f, false);
 	if (!group.is_empty()) {
 		g.register_light(l, group);
 	}
-	probe(head - Vector3(0, 5.0f, 0), 9.0f, 0.75f, group);
+	probe(head - Vector3(0, 5.5f, 0), 9.5f, 0.75f, group);
+	if (lit) {
+		moths(head - Vector3(0, 0.25f, 0));
+	}
 }
 
 void Kit::ceiling_lamp(const Vector3 &local_pos, const Color &color, float range, float energy, const String &group, bool shadow) {
@@ -279,6 +285,146 @@ AABB Kit::aabb(const Vector3 &local_center, const Vector3 &size) const {
 		}
 	}
 	return out;
+}
+
+void Kit::dust(const Vector3 &local_center, const Vector3 &extents, float density) {
+	GPUParticles3D *p = fx::dust(b.dynamic_root, g.get_materials(), b.g(local_center), extents, density);
+	p->set_rotation(Vector3(0.0f, b.gyaw(0.0f), 0.0f));
+}
+
+void Kit::fog(const Vector3 &local_center, const Vector3 &extents, float density) {
+	GPUParticles3D *p = fx::ground_fog(b.dynamic_root, g.get_materials(), b.g(local_center), extents, density);
+	p->set_rotation(Vector3(0.0f, b.gyaw(0.0f), 0.0f));
+}
+
+void Kit::drips(const Vector3 &local_top, float fall, float per_second, bool with_puddle) {
+	Vector3 top = b.g(local_top);
+	fx::drips(b.dynamic_root, g.get_materials(), top, fall, per_second);
+	fx::splash(b.dynamic_root, g.get_materials(), top - Vector3(0.0f, fall - 0.02f, 0.0f), per_second);
+	if (with_puddle) {
+		props::puddle(b, local_top - Vector3(0.0f, fall, 0.0f), 0.9f, uint32_t(std::fabs(top.x * 31.0f + top.z * 17.0f)) + 3);
+	}
+}
+
+void Kit::steam(const Vector3 &local_pos, const Vector3 &local_dir, float strength, bool hiss) {
+	fx::steam(b.dynamic_root, g.get_materials(), b.g(local_pos), b.gdir(local_dir), strength);
+	if (hiss) {
+		sound_loop(local_pos, "hiss", -14.0f, 12.0f);
+	}
+}
+
+void Kit::sparks(const Vector3 &local_pos, const String &group, float interval_min, float interval_max) {
+	FxSparks *s = memnew(FxSparks);
+	s->setup(g.get_materials(), group, interval_min, interval_max, uint32_t(std::fabs(local_pos.x * 97.0f + local_pos.z * 31.0f)) + 11);
+	b.add_dynamic(s, local_pos);
+}
+
+void Kit::debris(const Vector3 &local_pos) {
+	FxDebris *d = memnew(FxDebris);
+	d->setup(g.get_materials(), uint32_t(std::fabs(local_pos.x * 53.0f + local_pos.z * 19.0f)) + 5);
+	b.add_dynamic(d, local_pos);
+}
+
+void Kit::fire_barrel(const Vector3 &local_pos) {
+	props::barrel(b, local_pos, "rust", true);
+	Vector3 top = b.g(local_pos + Vector3(0.0f, 0.85f, 0.0f));
+	fx::fire(b.dynamic_root, g.get_materials(), top, 0.3f);
+	fx::embers(b.dynamic_root, g.get_materials(), top + Vector3(0, 0.2f, 0), 0.3f);
+	fx::smoke_plume(b.dynamic_root, g.get_materials(), top + Vector3(0, 0.6f, 0), 0.25f, Vector3(0.05f, 0.25f, 0.0f), Color(0.15f, 0.14f, 0.13f, 0.35f));
+	FxFlicker *light = memnew(FxFlicker);
+	light->set_color(Color(1.0f, 0.55f, 0.2f));
+	light->set_param(Light3D::PARAM_RANGE, 7.5f);
+	light->set_param(Light3D::PARAM_ATTENUATION, 1.8f);
+	light->setup(FxFlicker::MODE_FIRE, 1.7f, String(), 77);
+	b.add_dynamic(light, local_pos + Vector3(0.0f, 1.25f, 0.0f));
+	probe(local_pos + Vector3(0.0f, 1.0f, 0.0f), 6.0f, 0.85f);
+	sound_loop(local_pos + Vector3(0.0f, 1.0f, 0.0f), "fire", -10.0f, 18.0f);
+}
+
+void Kit::candles(const Vector3 &local_center, float radius) {
+	props::ritual_circle(b, local_center, radius);
+	for (int i = 0; i < 7; i++) {
+		float a = float(i) * PI * 2.0f / 7.0f + 0.3f;
+		Vector3 c(std::sin(a) * (radius + 0.25f), 0.0f, std::cos(a) * (radius + 0.25f));
+		float h = 0.12f - float(i % 3) * 0.03f;
+		fx::candle_flame(b.dynamic_root, g.get_materials(), b.g(local_center + c + Vector3(0.0f, h + 0.01f, 0.0f)));
+	}
+	FxFlicker *light = memnew(FxFlicker);
+	light->set_color(Color(1.0f, 0.7f, 0.35f));
+	light->set_param(Light3D::PARAM_RANGE, 4.5f);
+	light->setup(FxFlicker::MODE_CANDLE, 0.9f, String(), 13);
+	b.add_dynamic(light, local_center + Vector3(0.0f, 0.4f, 0.0f));
+	probe(local_center + Vector3(0.0f, 0.8f, 0.0f), 3.5f, 0.6f);
+}
+
+FxFlicker *Kit::flicker(const Vector3 &local_pos, const Color &color, float range, float energy, FxFlicker::Mode mode, const String &group, bool tube, bool shadow) {
+	FxFlicker *light = memnew(FxFlicker);
+	light->set_color(color);
+	light->set_param(Light3D::PARAM_RANGE, range);
+	light->set_shadow(shadow);
+	light->setup(mode, energy, group, uint32_t(std::fabs(local_pos.x * 7.0f + local_pos.z * 13.0f + local_pos.y * 3.0f)) + 1);
+	b.add_dynamic(light, local_pos - Vector3(0.0f, 0.15f, 0.0f));
+	if (tube) {
+		Ref<StandardMaterial3D> glow = g.get_materials().get("lamp_cold")->duplicate();
+		b.visual_box(local_pos + Vector3(0.0f, 0.06f, 0.0f), Vector3(1.25f, 0.06f, 0.16f), "metal_gray", Basis(), false);
+		MeshInstance3D *mi = b.visual_box(local_pos, Vector3(1.2f, 0.04f, 0.05f), "lamp_cold", Basis(), false);
+		mi->set_material_override(glow);
+		light->set_glow(glow);
+	}
+	float strength = mode == FxFlicker::MODE_BROKEN ? 0.25f : 0.62f;
+	probe(local_pos - Vector3(0.0f, 1.4f, 0.0f), range * 0.55f, strength, group);
+	return light;
+}
+
+void Kit::moths(const Vector3 &local_pos) {
+	fx::moths(b.dynamic_root, g.get_materials(), b.g(local_pos));
+}
+
+void Kit::leaves(const Vector3 &local_center, const Vector3 &extents, int amount) {
+	fx::leaves(b.dynamic_root, g.get_materials(), b.g(local_center), extents, amount);
+}
+
+void Kit::sound_loop(const Vector3 &local_pos, const char *sound, float volume_db, float max_distance) {
+	AudioStreamPlayer3D *p = memnew(AudioStreamPlayer3D);
+	p->set_stream(g.get_sounds().get(sound));
+	p->set_volume_db(volume_db);
+	p->set_max_distance(max_distance);
+	p->set_unit_size(3.0f);
+	p->set_autoplay(true);
+	b.add_dynamic(p, local_pos);
+}
+
+void Kit::decal(const char *texture, const Vector3 &local_pos, const Vector3 &local_normal, const Vector2 &size, float angle, float opacity) {
+	fx::decal(b.dynamic_root, g.get_materials(), texture, b.g(local_pos), b.gdir(local_normal), size, angle, opacity);
+}
+
+FxBeacon *Kit::beacon(const Vector3 &local_pos, const Color &a, const Color &b2, bool always, bool alternate) {
+	FxBeacon *bc = memnew(FxBeacon);
+	bc->setup(g.get_materials(), a, b2, always, alternate);
+	b.add_dynamic(bc, local_pos);
+	b.visual_box(local_pos - Vector3(0.0f, 0.1f, 0.0f), Vector3(0.18f, 0.06f, 0.18f), "black", Basis(), false);
+	return bc;
+}
+
+void Kit::tags(const Vector3 &local_pos, const Vector3 &local_normal, int index, float height) {
+	static const char *const LINES_TAGS[] = {
+		"STALK",
+		"666",
+		"ЗДЕСЬ БЫЛ ВАСЯ",
+		"ВЫХОДА НЕТ",
+		"НЕ СМОТРИ ВНИЗ",
+		"URBEX",
+		"SK8",
+		"ПОМОГИТЕ",
+		"Коля 2007",
+		"НИМОСТОР",
+		"ТЬМА",
+		"Kiss",
+		"ДИГГЕРЫ",
+		"СВАЛИ",
+		"RIP",
+	};
+	b.graffiti(local_pos, local_normal, String::utf8(LINES_TAGS[index % 15]), height);
 }
 
 void Kit::noisy(const Vector3 &local_center, const Vector3 &size, bool visual) {
@@ -338,4 +484,4 @@ void Kit::objective_reach(const String &id, const String &title, const AABB &zon
 	d.objectives.push_back(o);
 }
 
-} // namespace urbex
+}

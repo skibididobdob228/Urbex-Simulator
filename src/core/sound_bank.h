@@ -23,4 +23,4 @@ private:
 	bool built = false;
 };
 
-} // namespace urbex
+}

@@ -562,4 +562,4 @@ SpotLight3D *LevelBuilder::spot(const Vector3 &pos, const Vector3 &target, const
 	return light;
 }
 
-} // namespace urbex
+}

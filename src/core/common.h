@@ -14,7 +14,7 @@ constexpr uint32_t PLAYER = 1u << 1;
 constexpr uint32_t DOORS = 1u << 2;
 constexpr uint32_t GUARDS = 1u << 3;
 constexpr uint32_t INTERACT = 1u << 4;
-} // namespace layer
+}
 
 constexpr float PI = 3.14159265358979f;
 constexpr float DEG = PI / 180.0f;
@@ -90,4 +90,4 @@ inline godot::String operator""_u(const char *text, size_t length) {
 
 godot::String item_display_name(const godot::String &id);
 
-} // namespace urbex
+}

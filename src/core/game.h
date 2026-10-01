@@ -62,6 +62,9 @@ private:
 	LevelData level;
 	RunStats stats;
 
+	bool audio_muted = false;
+	int quit_countdown = -1;
+	int quit_code = 0;
 	godot::Node3D *level_root = nullptr;
 	godot::NavigationRegion3D *nav_region = nullptr;
 	UrbexPlayer *player = nullptr;
@@ -157,6 +160,9 @@ public:
 
 	void _ready() override;
 	void _exit_tree() override;
+	void _notification(int p_what);
+	void silence_audio();
+	void request_quit(int code);
 	void _process(double delta) override;
 	void _unhandled_input(const godot::Ref<godot::InputEvent> &event) override;
 
@@ -205,4 +211,4 @@ public:
 	float now() const;
 };
 
-} // namespace urbex
+}

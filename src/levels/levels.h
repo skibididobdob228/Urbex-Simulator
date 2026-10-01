@@ -27,4 +27,4 @@ void build_rooftop(LevelBuilder &b, LevelData &data, UrbexGame &game);
 godot::String stalker_memo_text();
 godot::String controls_text();
 
-} // namespace urbex
+}
