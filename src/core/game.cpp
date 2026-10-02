@@ -6,6 +6,7 @@
 #include "core/common.h"
 #include "core/effects.h"
 #include "core/props.h"
+#include "core/selftest.h"
 #include "levels/levels.h"
 #include "security/devices.h"
 #include "ui/hud.h"
@@ -13,6 +14,7 @@
 #include "world/interactable.h"
 
 #include <godot_cpp/classes/config_file.hpp>
+#include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/directional_light3d.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/environment.hpp>
@@ -26,8 +28,10 @@
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/physics_ray_query_parameters3d.hpp>
 #include <godot_cpp/classes/procedural_sky_material.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/sky.hpp>
+#include <godot_cpp/classes/time.hpp>
 #include <godot_cpp/classes/viewport.hpp>
 #include <godot_cpp/classes/viewport_texture.hpp>
 #include <godot_cpp/classes/world3d.hpp>
@@ -45,8 +49,6 @@ namespace urbex {
 UrbexGame *UrbexGame::singleton = nullptr;
 
 namespace {
-
-const char *SAVE_PATH = "user://urbex_save.cfg";
 
 String format_time(float seconds) {
 	int s = int(seconds);
@@ -67,6 +69,7 @@ UrbexGame::UrbexGame() {
 }
 
 UrbexGame::~UrbexGame() {
+	selftest.reset();
 	if (singleton == this) {
 		singleton = nullptr;
 	}
@@ -124,10 +127,11 @@ void UrbexGame::_ready() {
 	set_process_mode(PROCESS_MODE_ALWAYS);
 	get_tree()->set_auto_accept_quit(false);
 	setup_input();
+	setup_automation();
 
 	Ref<ConfigFile> cfg;
 	cfg.instantiate();
-	if (cfg->load(SAVE_PATH) == OK) {
+	if (cfg->load(save_path) == OK) {
 		sensitivity = float(double(cfg->get_value("settings", "sensitivity", 1.0)));
 	}
 
@@ -157,7 +161,21 @@ void UrbexGame::_ready() {
 	add_child(menu);
 	menu->build();
 
-	setup_automation();
+	if (selftest_requested) {
+		std::vector<int> picked;
+		const std::vector<LevelInfo> &levels = level_catalog();
+		for (size_t i = 0; i < levels.size(); i++) {
+			if (selftest_levels.is_empty() || selftest_levels.has(levels[i].id)) {
+				picked.push_back(int(i));
+			}
+		}
+		if (picked.empty()) {
+			UtilityFunctions::printerr("Unknown level id for selftest: ", String(",").join(selftest_levels));
+			request_quit(2);
+			return;
+		}
+		selftest = std::make_unique<SelfTest>(*this, picked);
+	}
 	if (!autotest_level.is_empty()) {
 		const std::vector<LevelInfo> &levels = level_catalog();
 		for (size_t i = 0; i < levels.size(); i++) {
@@ -216,7 +234,13 @@ void UrbexGame::setup_automation() {
 	user_args = OS::get_singleton()->get_cmdline_user_args();
 	for (int i = 0; i < user_args.size(); i++) {
 		String a = user_args[i];
-		if (a.begins_with("--autotest=")) {
+		if (a == "--selftest" || a.begins_with("--selftest=")) {
+			selftest_requested = true;
+			save_path = "user://urbex_selftest.cfg";
+			if (a.contains("=")) {
+				selftest_levels = a.get_slice("=", 1).split(",", false);
+			}
+		} else if (a.begins_with("--autotest=")) {
 			autotest_level = a.get_slice("=", 1);
 		} else if (a.begins_with("--shot=")) {
 			screenshot_path = a.get_slice("=", 1);
@@ -412,15 +436,15 @@ void UrbexGame::set_sensitivity(float value) {
 	sensitivity = value;
 	Ref<ConfigFile> cfg;
 	cfg.instantiate();
-	cfg->load(SAVE_PATH);
+	cfg->load(save_path);
 	cfg->set_value("settings", "sensitivity", value);
-	cfg->save(SAVE_PATH);
+	cfg->save(save_path);
 }
 
 int UrbexGame::load_best(const String &level_id) const {
 	Ref<ConfigFile> cfg;
 	cfg.instantiate();
-	if (cfg->load(SAVE_PATH) != OK) {
+	if (cfg->load(save_path) != OK) {
 		return 0;
 	}
 	return int(cfg->get_value("best", level_id, 0));
@@ -440,9 +464,9 @@ void UrbexGame::save_result(int score) {
 	}
 	Ref<ConfigFile> cfg;
 	cfg.instantiate();
-	cfg->load(SAVE_PATH);
+	cfg->load(save_path);
 	cfg->set_value("best", level.id, score);
-	cfg->save(SAVE_PATH);
+	cfg->save(save_path);
 }
 
 void UrbexGame::clear_level() {
@@ -672,12 +696,13 @@ void UrbexGame::quit_game() {
 }
 
 void UrbexGame::request_quit(int code) {
-	if (quit_countdown >= 0) {
+	if (quit_countdown != -1) {
 		return;
 	}
 	silence_audio();
 	quit_code = code;
 	quit_countdown = 12;
+	quit_after_msec = Time::get_singleton()->get_ticks_msec() + 300;
 }
 
 void UrbexGame::_unhandled_input(const Ref<InputEvent> &event) {
@@ -710,16 +735,26 @@ void UrbexGame::_unhandled_input(const Ref<InputEvent> &event) {
 }
 
 void UrbexGame::_process(double delta) {
-	if (Engine::get_singleton()->is_editor_hint() || !hud) {
+	if (Engine::get_singleton()->is_editor_hint() || !hud || quit_countdown == -2) {
 		return;
 	}
 	if (quit_countdown >= 0) {
-		if (quit_countdown-- == 0) {
+		if (quit_countdown > 0) {
+			quit_countdown--;
+		} else if (Time::get_singleton()->get_ticks_msec() >= quit_after_msec) {
+			quit_countdown = -2;
 			get_tree()->quit(quit_code);
 		}
 		return;
 	}
 	hud->tick(delta);
+	if (selftest && selftest->tick()) {
+		int failed = selftest->get_failures();
+		selftest.reset();
+		DirAccess::remove_absolute(ProjectSettings::get_singleton()->globalize_path(save_path));
+		request_quit(failed > 0 ? 1 : 0);
+		return;
+	}
 	run_automation();
 	if (mode == MODE_PLAYING) {
 		update_playing(delta);

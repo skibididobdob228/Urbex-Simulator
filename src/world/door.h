@@ -68,6 +68,9 @@ public:
 	void open_instantly();
 
 	bool is_open() const { return open; }
+	bool is_moving() const { return moving; }
+	bool is_jammed() const { return jammed; }
+	bool has_padlock() const { return padlock; }
 	bool has_reed() const { return reed; }
 	bool is_reed_armed() const { return reed && !reed_bypassed && powered; }
 	bool is_reed_bypassed() const { return reed_bypassed; }

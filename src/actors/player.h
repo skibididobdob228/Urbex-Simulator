@@ -116,7 +116,12 @@ public:
 	Gait get_gait() const { return gait; }
 	godot::String get_gait_name() const;
 	int get_photos_taken() const { return photos_taken; }
+	bool is_dead() const { return dead; }
 	Interactable *get_focus() const { return focus; }
+	Interactable *probe_focus() {
+		update_focus();
+		return focus;
+	}
 
 	bool has_item(const godot::String &id) const;
 	void give_item(const godot::String &id, const godot::String &name);

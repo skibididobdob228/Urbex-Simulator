@@ -85,6 +85,39 @@ scons platform=windows target=template_debug    # или linux / macos
 
 Для экспорта в exe собери ещё `target=template_release` и экспортируй проект штатно через Project → Export.
 
+### Arch Linux
+
+```bash
+sudo pacman -Syu --needed base-devel git python scons godot
+git clone --recursive https://github.com/skibididobdob228/Urbex-Simulator.git
+cd Urbex-Simulator
+scons platform=linux target=template_debug -j"$(nproc)"
+godot --path project
+```
+
+Редактор: `godot -e --path project`. Если клонировал без `--recursive`, сначала выполни `git submodule update --init --recursive`. Release-библиотека для экспорта: `scons platform=linux target=template_release -j"$(nproc)"`.
+
+## Тесты
+
+`tests/run_selftest.sh` собирает библиотеку и прогоняет самотест в headless-режиме: все три уровня по очереди, около 580 проверок.
+
+- навмеш, маршруты охраны и точки обыска ГБР достижимы;
+- в каждую дверь, предмет, щиток, лестницу и записку можно прицелиться с пола;
+- предметы подбираются, двери открываются ключами и болторезом, геркон поднимает тревогу, а с магнитом молчит;
+- щитки гасят свет и датчики и включают обратно, лестницы и заборы переносят игрока куда надо;
+- каждую фото-цель можно снять из доступной точки, выход засчитывает победу и сохраняет рекорд;
+- тревога вызывает ГБР, ГБР ходят по навмешу и ловят игрока, падение с высоты убивает, пауза и выход в меню работают;
+- любые ошибки и предупреждения движка во время прогона считаются провалом, утечки объектов при выходе тоже.
+
+```bash
+tests/run_selftest.sh                       # собрать и проверить все уровни
+tests/run_selftest.sh --levels=shelter      # только один уровень
+tests/run_selftest.sh --asan                # то же под AddressSanitizer и UBSan
+GODOT=/путь/к/godot tests/run_selftest.sh --no-build
+```
+
+Самотест работает с отдельным файлом сохранений и не трогает твои рекорды. В GitHub Actions он запускается на Godot 4.5 и 4.7.2.
+
 ## Структура
 
 ```
@@ -97,6 +130,7 @@ src/
   levels/     три уровня и общие заготовки
 project/      проект Godot
 godot-cpp/    сабмодуль с привязками C++
+tests/        запуск самотеста
 ```
 
 ## Отладочные флаги
@@ -104,6 +138,7 @@ godot-cpp/    сабмодуль с привязками C++
 Для автотестов без рук игра понимает аргументы после `--`:
 
 ```bash
+godot --headless --fixed-fps 60 --path project -- --selftest   # полный самотест, код возврата 0 или 1
 godot --headless --path project -- --autotest=hospital        # загрузить уровень, проверить навмеш, маршруты, точки для фото
 godot --path project -- --autotest=shelter --shot=out.png --pos=-3,-5.9,0.4 --yaw=180 --light
 ```

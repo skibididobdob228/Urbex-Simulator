@@ -117,6 +117,9 @@ public:
 	godot::String get_spot_id() const { return spot_id; }
 	godot::String get_title() const { return title; }
 	bool is_captured() const { return captured; }
+	bool has_zone_box() const { return has_zone; }
+	godot::AABB get_zone() const { return zone; }
+	float get_max_distance() const { return max_distance; }
 	void set_captured(bool value) { captured = value; }
 	bool in_frame(godot::Node3D *camera, godot::Vector3 forward) const;
 };

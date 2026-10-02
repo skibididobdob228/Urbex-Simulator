@@ -1,4 +1,5 @@
 #include "register_types.h"
+#include "core/selftest.h"
 
 #include "actors/guard.h"
 #include "actors/player.h"
@@ -19,6 +20,7 @@ void initialize_urbex_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	GDREGISTER_RUNTIME_CLASS(urbex::SelfTestLogger);
 	GDREGISTER_RUNTIME_CLASS(urbex::UrbexGame);
 	GDREGISTER_RUNTIME_CLASS(urbex::UrbexPlayer);
 	GDREGISTER_RUNTIME_CLASS(urbex::Guard);

@@ -111,9 +111,9 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	d.indoor_exposure = 0.1f;
 	d.kill_height = -10.0f;
 	d.gbr_delay = 70.0f;
-	d.gbr_spawn = Vector3(0.0f, 0.15f, 0.5f);
+	d.gbr_spawn = Vector3(1.5f, 0.1f, -33.0f);
 	d.gbr_van = true;
-	d.gbr_van_position = Vector3(20.0f, 0.05f, -40.5f);
+	d.gbr_van_position = Vector3(6.0f, 0.05f, -40.5f);
 	d.gbr_van_yaw = PI * 0.5f;
 	d.ambience = Ambience::Rooftop;
 	d.nav_bounds = AABB(Vector3(-42.0f, -1.0f, -37.0f), Vector3(84.0f, 43.0f, 74.0f));

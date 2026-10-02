@@ -116,6 +116,9 @@ public:
 	void set_vibration_sensor(const godot::String &name) { vibration_sensor = name; }
 	void set_noise(float radius, const godot::String &snd);
 	void set_arrival_message(const godot::String &text) { arrival_message = text; }
+	godot::Vector3 get_target() const { return target; }
+	float get_duration() const { return duration; }
+	bool has_vibration_sensor() const { return !vibration_sensor.is_empty(); }
 
 	godot::String get_prompt(UrbexPlayer *player) const override;
 	void interact(UrbexPlayer *player) override;
@@ -135,6 +138,7 @@ protected:
 public:
 	void setup(const godot::String &p_group, const godot::String &name, godot::Node3D *lever_node);
 	bool is_on() const { return on; }
+	godot::String get_group() const { return group; }
 	godot::String get_prompt(UrbexPlayer *player) const override;
 	void interact(UrbexPlayer *player) override;
 };

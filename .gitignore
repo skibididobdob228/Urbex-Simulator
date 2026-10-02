@@ -8,8 +8,8 @@
 *.ilk
 project/bin/*
 !project/bin/.gitkeep
-project/.godot/
-.godot/
+project/.godot/*
+!project/.godot/extension_list.cfg
 compile_commands.json
 __pycache__/
 .vscode/

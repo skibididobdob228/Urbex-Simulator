@@ -134,6 +134,13 @@ public:
 	Kind get_kind() const { return kind; }
 	bool is_chasing() const { return state == STATE_CHASE; }
 	godot::String get_display_name() const { return display_name; }
+	std::vector<godot::Vector3> get_route_positions() const {
+		std::vector<godot::Vector3> out;
+		for (const RoutePoint &p : route) {
+			out.push_back(p.position);
+		}
+		return out;
+	}
 
 	void _physics_process(double delta) override;
 	void _process(double delta) override;

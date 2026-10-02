@@ -15,6 +15,7 @@
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/physics_direct_space_state3d.hpp>
 
+#include <memory>
 #include <vector>
 
 namespace urbex {
@@ -23,6 +24,7 @@ class UrbexPlayer;
 class UrbexHud;
 class MainMenu;
 class Guard;
+class SelfTest;
 
 struct RunStats {
 	float time = 0.0f;
@@ -53,6 +55,7 @@ public:
 	};
 
 private:
+	friend class SelfTest;
 	static UrbexGame *singleton;
 
 	MaterialLibrary material_library;
@@ -65,6 +68,7 @@ private:
 	bool audio_muted = false;
 	int quit_countdown = -1;
 	int quit_code = 0;
+	uint64_t quit_after_msec = 0;
 	godot::Node3D *level_root = nullptr;
 	godot::NavigationRegion3D *nav_region = nullptr;
 	UrbexPlayer *player = nullptr;
@@ -110,6 +114,10 @@ private:
 	bool exit_announced = false;
 
 	godot::PackedStringArray user_args;
+	godot::String save_path = "user://urbex_save.cfg";
+	godot::PackedStringArray selftest_levels;
+	bool selftest_requested = false;
+	std::unique_ptr<SelfTest> selftest;
 	godot::String autotest_level;
 	godot::String screenshot_path;
 	int automation_frames = 0;
