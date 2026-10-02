@@ -117,6 +117,7 @@ public:
 	godot::String get_gait_name() const;
 	int get_photos_taken() const { return photos_taken; }
 	bool is_dead() const { return dead; }
+	void set_crouch(bool value);
 	Interactable *get_focus() const { return focus; }
 	Interactable *probe_focus() {
 		update_focus();

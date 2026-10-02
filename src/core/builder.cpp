@@ -200,7 +200,7 @@ void LevelBuilder::wall(const Vector3 &a, const Vector3 &b, float y0, float heig
 		float mid = (s0 + s1) * 0.5f;
 		Vector3 c = Vector3(a.x, 0.0f, a.z) + dir * mid;
 		c.y = (yb + yt) * 0.5f;
-		box_rot(c, basis, Vector3(s1 - s0, yt - yb, thickness), material, collide);
+		tiled_box(c, basis, Vector3(s1 - s0, yt - yb, thickness), material, 6.0f, collide);
 	};
 
 	float cursor = 0.0f;
@@ -218,7 +218,22 @@ void LevelBuilder::wall(const Vector3 &a, const Vector3 &b, float y0, float heig
 	segment(cursor, len, y0, y0 + height);
 }
 
-void LevelBuilder::slab(float x0, float z0, float x1, float z1, float top_y, float thickness, const char *material, const std::vector<Rect2> &holes) {
+void LevelBuilder::tiled_box(const Vector3 &center, const Basis &basis, const Vector3 &size, const char *material, float tile, bool collide) {
+	if (collide) {
+		collider_box(center, basis, size);
+	}
+	int nx = std::max(1, int(std::ceil(size.x / tile - 0.01f)));
+	int nz = std::max(1, int(std::ceil(size.z / tile - 0.01f)));
+	Vector3 piece(size.x / float(nx), size.y, size.z / float(nz));
+	for (int i = 0; i < nx; i++) {
+		for (int j = 0; j < nz; j++) {
+			Vector3 offset(-size.x * 0.5f + piece.x * (float(i) + 0.5f), 0.0f, -size.z * 0.5f + piece.z * (float(j) + 0.5f));
+			visual_box(center + basis.xform(offset), piece, material, basis);
+		}
+	}
+}
+
+void LevelBuilder::slab(float x0, float z0, float x1, float z1, float top_y, float thickness, const char *material, const std::vector<Rect2> &holes, float tile) {
 	std::vector<float> xs = { x0, x1 };
 	std::vector<float> zs = { z0, z1 };
 	for (const Rect2 &h : holes) {
@@ -261,7 +276,7 @@ void LevelBuilder::slab(float x0, float z0, float x1, float z1, float top_y, flo
 			}
 			float xa = xs[xi];
 			float xb = xs[end];
-			box(Vector3((xa + xb) * 0.5f, top_y - thickness * 0.5f, cz), Vector3(xb - xa, thickness, zb - za), material);
+			tiled_box(Vector3((xa + xb) * 0.5f, top_y - thickness * 0.5f, cz), Basis(), Vector3(xb - xa, thickness, zb - za), material, tile, true);
 			xi = end;
 		}
 	}

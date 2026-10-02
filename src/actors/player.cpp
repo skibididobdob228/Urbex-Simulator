@@ -180,6 +180,17 @@ void UrbexPlayer::set_look(float p_yaw, float p_pitch) {
 	head->set_rotation(Vector3(pitch, 0.0f, 0.0f));
 }
 
+void UrbexPlayer::set_crouch(bool value) {
+	build();
+	crouch_toggled = value;
+	crouching = value;
+	crouch_blend = value ? 1.0f : 0.0f;
+	float h = get_height();
+	capsule->set_height(h);
+	collider->set_position(Vector3(0.0f, h * 0.5f, 0.0f));
+	head->set_position(Vector3(0.0f, lerpf(1.6f, 0.92f, crouch_blend), 0.0f));
+}
+
 void UrbexPlayer::set_flashlight(bool on) {
 	flashlight_on = on;
 	if (flashlight) {

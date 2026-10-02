@@ -125,7 +125,7 @@ void build_rooftop(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.objective_action("sticker", "Оставить стикер команды на крыше"_u);
 	k.objective_item("badge", "Найти значок руфера"_u, true);
 
-	b.slab(-200.0f, -200.0f, 200.0f, 200.0f, 0.0f, 0.5f, "ground");
+	b.slab(-200.0f, -200.0f, 200.0f, 200.0f, 0.0f, 0.5f, "ground", {}, 40.0f);
 	b.box(Vector3(0.0f, 0.02f, -46.0f), Vector3(400.0f, 0.06f, 14.0f), "asphalt");
 	b.box(Vector3(0.0f, 0.03f, -21.0f), Vector3(3.0f, 0.06f, 28.0f), "asphalt");
 	b.box(Vector3(-24.0f, 0.03f, 10.0f), Vector3(30.0f, 0.06f, 3.0f), "asphalt");

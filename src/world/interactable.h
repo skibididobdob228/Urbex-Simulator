@@ -105,6 +105,7 @@ class ClimbPoint : public Interactable {
 	float noise_radius = 0.0f;
 	godot::String sound;
 	godot::String arrival_message;
+	int arrival_pose = -1;
 
 protected:
 	static void _bind_methods() {}
@@ -116,6 +117,8 @@ public:
 	void set_vibration_sensor(const godot::String &name) { vibration_sensor = name; }
 	void set_noise(float radius, const godot::String &snd);
 	void set_arrival_message(const godot::String &text) { arrival_message = text; }
+	void set_arrival_pose(bool crouched) { arrival_pose = crouched ? 1 : 0; }
+	int get_arrival_pose() const { return arrival_pose; }
 	godot::Vector3 get_target() const { return target; }
 	float get_duration() const { return duration; }
 	bool has_vibration_sensor() const { return !vibration_sensor.is_empty(); }

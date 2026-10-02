@@ -453,7 +453,7 @@ void build_hospital(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 
 	const float A = HUB_A;
 	const float shaft_x0 = -(A + 21.5f);
-	b.slab(-220.0f, -220.0f, 220.0f, 220.0f, 0.0f, 0.5f, "ground", { Rect2(shaft_x0, -4.6f, 3.0f, 2.8f) });
+	b.slab(-220.0f, -220.0f, 220.0f, 220.0f, 0.0f, 0.5f, "ground", { Rect2(shaft_x0, -4.6f, 3.0f, 2.8f) }, 40.0f);
 
 	b.box(Vector3(-73.0f, 0.02f, 0.0f), Vector3(14.0f, 0.06f, 440.0f), "asphalt");
 	b.box(Vector3(0.0f, 0.02f, -73.0f), Vector3(440.0f, 0.06f, 14.0f), "asphalt");

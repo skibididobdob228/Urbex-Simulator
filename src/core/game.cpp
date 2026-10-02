@@ -272,6 +272,8 @@ void UrbexGame::setup_automation() {
 			auto_use = int(a.get_slice("=", 1).to_int());
 		} else if (a == "--run") {
 			walk_run = true;
+		} else if (a == "--crouch") {
+			walk_crouch = true;
 		} else if (a == "--bright") {
 			shot_bright = true;
 		} else if (a.begins_with("--frames=")) {
@@ -314,6 +316,7 @@ void UrbexGame::run_automation() {
 			player->give_item(auto_items[i], item_display_name(auto_items[i]));
 		}
 		if (walk_start && player) {
+			player->set_crouch(walk_crouch);
 			player->place(walk_position, shot_yaw);
 			player->set_look(shot_yaw, shot_pitch);
 		}
@@ -849,6 +852,9 @@ void UrbexGame::update_transition(double delta) {
 		hud->set_fade(clampf(t.timer / fade, 0.0f, 1.0f));
 		if (t.timer >= fade) {
 			t.moved = true;
+			if (t.pose >= 0) {
+				player->set_crouch(t.pose == 1);
+			}
 			player->place(t.target, t.yaw);
 			if (!t.message.is_empty()) {
 				notify(t.message, Color(0.8f, 0.85f, 0.95f));
@@ -864,13 +870,14 @@ void UrbexGame::update_transition(double delta) {
 	}
 }
 
-void UrbexGame::transition(const Vector3 &target, float yaw, float duration, const String &message) {
+void UrbexGame::transition(const Vector3 &target, float yaw, float duration, const String &message, int pose) {
 	transition_state = Transition();
 	transition_state.active = true;
 	transition_state.target = target;
 	transition_state.yaw = yaw;
 	transition_state.duration = duration;
 	transition_state.message = message;
+	transition_state.pose = pose;
 	player->set_controls_enabled(false);
 }
 
@@ -984,9 +991,6 @@ void UrbexGame::update_hud(double delta) {
 	String st = player->get_gait_name();
 	if (player->is_flashlight_on()) {
 		st += " · фонарь"_u;
-	}
-	if (player->is_crouching()) {
-		st += " · присед"_u;
 	}
 	if (player->is_photo_flash()) {
 		st += " · вспышка"_u;

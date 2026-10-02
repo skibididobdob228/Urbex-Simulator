@@ -236,7 +236,7 @@ void SelfTest::flush_errors() {
 	}
 }
 
-bool SelfTest::floor_below(const Vector3 &p, Vector3 &out) const {
+bool SelfTest::floor_below(const Vector3 &p, Vector3 &out, bool &crouch) const {
 	PhysicsDirectSpaceState3D *space = g.get_space();
 	if (!space) {
 		return false;
@@ -248,7 +248,12 @@ bool SelfTest::floor_below(const Vector3 &p, Vector3 &out) const {
 	}
 	Vector3 feet = Vector3(hit["position"]) + Vector3(0.0f, 0.05f, 0.0f);
 	Ref<PhysicsRayQueryParameters3D> up = PhysicsRayQueryParameters3D::create(feet + Vector3(0.0f, 0.1f, 0.0f), feet + Vector3(0.0f, 1.75f, 0.0f), layer::WORLD);
-	if (!space->intersect_ray(up).is_empty()) {
+	Dictionary roof = space->intersect_ray(up);
+	if (roof.is_empty()) {
+		crouch = false;
+	} else if (Vector3(roof["position"]).y - feet.y >= 1.05f) {
+		crouch = true;
+	} else {
 		return false;
 	}
 	out = feet;
@@ -299,13 +304,16 @@ void SelfTest::close_note() {
 }
 
 void SelfTest::place(const Stand &s) {
+	g.player->set_crouch(s.crouch);
 	g.player->place(s.feet, s.yaw);
 	g.player->set_look(s.yaw, s.pitch);
 }
 
-SelfTest::Stand SelfTest::aim(const Vector3 &feet, const Vector3 &target) const {
+SelfTest::Stand SelfTest::aim(const Vector3 &feet, const Vector3 &target, bool crouch) const {
 	Stand s;
 	s.feet = feet;
+	s.crouch = crouch;
+	g.player->set_crouch(crouch);
 	g.player->place(feet, 0.0f);
 	for (int i = 0; i < 2; i++) {
 		Vector3 eye = g.player->get_eye_position();
@@ -332,6 +340,7 @@ Vector3 SelfTest::target_of(Interactable *it) const {
 
 bool SelfTest::find_stand(Interactable *it, const Vector3 &target, Stand &out) {
 	std::vector<Vector3> candidates;
+	std::vector<bool> crouched;
 	for (float r : { 0.0f, 0.8f, 1.3f, 1.8f, 2.2f }) {
 		int n = r == 0.0f ? 1 : 12;
 		for (int k = 0; k < n; k++) {
@@ -339,7 +348,8 @@ bool SelfTest::find_stand(Interactable *it, const Vector3 &target, Stand &out) {
 			for (float dy : { 0.0f, -1.2f, -2.4f, 1.2f }) {
 				Vector3 sample = target + Vector3(std::cos(a) * r, dy, std::sin(a) * r);
 				Vector3 options[2] = { closest(sample), Vector3() };
-				int count = floor_below(sample + Vector3(0.0f, 0.5f, 0.0f), options[1]) ? 2 : 1;
+				bool low[2] = { false, false };
+				int count = floor_below(sample + Vector3(0.0f, 0.5f, 0.0f), options[1], low[1]) ? 2 : 1;
 				for (int o = 0; o < count; o++) {
 					const Vector3 &p = options[o];
 					if ((p - target).length() > 3.3f) {
@@ -354,13 +364,14 @@ bool SelfTest::find_stand(Interactable *it, const Vector3 &target, Stand &out) {
 					}
 					if (!duplicate) {
 						candidates.push_back(p);
+						crouched.push_back(low[o]);
 					}
 				}
 			}
 		}
 	}
-	for (const Vector3 &p : candidates) {
-		Stand s = aim(p, target);
+	for (size_t i = 0; i < candidates.size(); i++) {
+		Stand s = aim(candidates[i], target, crouched[i]);
 		place(s);
 		if ((g.player->get_eye_position() - target).length() > 2.55f) {
 			continue;
@@ -420,6 +431,7 @@ void SelfTest::give_everything() {
 bool SelfTest::step_load(int level, int f) {
 	if (f == 0) {
 		stands.clear();
+		deferred.clear();
 		g.start_level(level);
 		check(g.mode == UrbexGame::MODE_PLAYING, "mode is PLAYING after start_level");
 		check(g.level_root != nullptr && g.player != nullptr && g.nav_region != nullptr, "level root, player and navigation exist");
@@ -504,12 +516,14 @@ bool SelfTest::step_targets(int f) {
 	for (Interactable *it : items) {
 		Stand s;
 		bool ok = find_stand(it, target_of(it), s);
-		check(ok, String("player can aim at ") + label_of(it, g.player));
 		if (ok) {
 			stands[it->get_instance_id()] = s;
+		} else {
+			deferred.push_back(it->get_instance_id());
 		}
 		check(!it->get_prompt(g.player).is_empty() || Object::cast_to<Door>(it) != nullptr, String("prompt is not empty for ") + it->get_class() + " " + where(it->get_global_position()));
 	}
+	g.player->set_crouch(false);
 	g.player->place(g.level.spawn_position, g.level.spawn_yaw);
 	return true;
 }
@@ -706,6 +720,19 @@ bool SelfTest::step_climbs(int f) {
 		}
 		watched.clear();
 		watched_start.clear();
+		for (uint64_t id : deferred) {
+			Interactable *it = alive<Interactable>(id);
+			if (!it) {
+				continue;
+			}
+			Stand s;
+			bool ok = find_stand(it, target_of(it), s);
+			check(ok, String("player can aim at ") + label_of(it, g.player) + " (doors open)");
+			if (ok) {
+				stands[id] = s;
+			}
+		}
+		deferred.clear();
 	}
 	int slot = f / 330;
 	int local = f % 330;

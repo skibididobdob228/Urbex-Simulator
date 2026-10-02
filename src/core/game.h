@@ -102,6 +102,7 @@ private:
 		godot::Vector3 target;
 		float yaw = 0.0f;
 		godot::String message;
+		int pose = -1;
 	};
 	Transition transition_state;
 
@@ -131,6 +132,7 @@ private:
 	godot::Vector3 walk_position;
 	float walk_seconds = 0.0f;
 	bool walk_run = false;
+	bool walk_crouch = false;
 	bool auto_snap = false;
 	int auto_use = 0;
 	godot::PackedStringArray auto_items;
@@ -209,7 +211,7 @@ public:
 	void set_power(const godot::String &group, bool on, const godot::Vector3 &where);
 	bool is_powered(const godot::String &group) const;
 	void register_light(godot::Light3D *light, const godot::String &group);
-	void transition(const godot::Vector3 &target, float yaw, float duration, const godot::String &message = godot::String());
+	void transition(const godot::Vector3 &target, float yaw, float duration, const godot::String &message = godot::String(), int pose = -1);
 	bool is_transitioning() const { return transition_state.active; }
 	void play_sound(const godot::String &name, const godot::Vector3 &position, float volume_db = 0.0f, float pitch = 1.0f, float max_distance = 40.0f);
 	void play_ui_sound(const godot::String &name, float volume_db = 0.0f, float pitch = 1.0f);

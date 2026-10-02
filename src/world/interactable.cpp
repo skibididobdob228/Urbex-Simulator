@@ -165,7 +165,7 @@ void ClimbPoint::interact(UrbexPlayer *player) {
 	if (!vibration_sensor.is_empty()) {
 		game->raise_alarm(get_global_position(), vibration_sensor);
 	}
-	game->transition(target, target_yaw, duration, arrival_message);
+	game->transition(target, target_yaw, duration, arrival_message, arrival_pose);
 }
 
 void PowerSwitch::setup(const String &p_group, const String &name, Node3D *lever_node) {

@@ -51,6 +51,7 @@ private:
 		godot::Vector3 feet;
 		float yaw = 0.0f;
 		float pitch = 0.0f;
+		bool crouch = false;
 	};
 
 	UrbexGame &g;
@@ -64,6 +65,7 @@ private:
 	godot::String scope;
 	std::map<uint64_t, Stand> stands;
 	std::vector<uint64_t> watched;
+	std::vector<uint64_t> deferred;
 	std::vector<godot::Vector3> watched_start;
 
 	void add(const godot::String &name, std::function<bool(int)> run);
@@ -73,13 +75,13 @@ private:
 	void flush_errors();
 
 	godot::Vector3 closest(const godot::Vector3 &p) const;
-	bool floor_below(const godot::Vector3 &p, godot::Vector3 &out) const;
+	bool floor_below(const godot::Vector3 &p, godot::Vector3 &out, bool &crouch) const;
 	bool reachable(const godot::Vector3 &from, const godot::Vector3 &to, float tolerance) const;
 	void freeze(bool value);
 	void calm();
 	void close_note();
 	void place(const Stand &s);
-	Stand aim(const godot::Vector3 &feet, const godot::Vector3 &target) const;
+	Stand aim(const godot::Vector3 &feet, const godot::Vector3 &target, bool crouch = false) const;
 	bool find_stand(Interactable *it, const godot::Vector3 &target, Stand &out);
 	bool frame_photo(PhotoSpot *spot, Stand &out);
 	godot::Vector3 target_of(Interactable *it) const;

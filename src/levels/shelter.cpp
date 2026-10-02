@@ -135,15 +135,111 @@ void shelter_dressing(Kit &k) {
 
 }
 
+void vent_entrances(Kit &k) {
+	LevelBuilder &b = k.b;
+
+	const Vector3 intake(-4.8f, 0.0f, 5.25f);
+	b.wall(Vector3(-5.4f, 0, 4.65f), Vector3(-4.2f, 0, 4.65f), UC, -UC, 0.2f, "concrete");
+	b.wall(Vector3(-5.4f, 0, 5.85f), Vector3(-4.2f, 0, 5.85f), UC, -UC, 0.2f, "concrete");
+	b.wall(Vector3(-5.4f, 0, 4.65f), Vector3(-5.4f, 0, 5.85f), UC, -UC, 0.2f, "concrete");
+	b.wall(Vector3(-4.2f, 0, 4.65f), Vector3(-4.2f, 0, 5.85f), UC, -UC, 0.2f, "concrete");
+	for (float y = UF + 0.4f; y < -0.2f; y += 0.36f) {
+		float z = y < UC ? 5.78f : 5.69f;
+		b.visual_box(Vector3(-4.8f, y, z), Vector3(0.46f, 0.03f, 0.05f), "rust");
+		b.visual_box(Vector3(-5.02f, y, z + 0.04f), Vector3(0.03f, 0.03f, 0.1f), "rust", Basis(), false);
+		b.visual_box(Vector3(-4.58f, y, z + 0.04f), Vector3(0.03f, 0.03f, 0.1f), "rust", Basis(), false);
+	}
+	b.wall(intake + Vector3(-0.9f, 0, -0.9f), intake + Vector3(0.9f, 0, -0.9f), 0.0f, 1.5f, 0.25f, "concrete", { Opening{ 0.9f, 0.86f, 0.28f, 1.2f } });
+	b.wall(intake + Vector3(-0.9f, 0, 0.9f), intake + Vector3(0.9f, 0, 0.9f), 0.0f, 1.5f, 0.25f, "concrete");
+	b.wall(intake + Vector3(-0.9f, 0, -0.9f), intake + Vector3(-0.9f, 0, 0.9f), 0.0f, 1.5f, 0.25f, "concrete");
+	b.wall(intake + Vector3(0.9f, 0, -0.9f), intake + Vector3(0.9f, 0, 0.9f), 0.0f, 1.5f, 0.25f, "concrete");
+	b.box(intake + Vector3(0.0f, 1.6f, 0.0f), Vector3(2.2f, 0.2f, 2.2f), "concrete");
+	for (int side = -1; side <= 1; side += 2) {
+		for (int i = 0; i < 4; i++) {
+			b.visual_box(intake + Vector3(float(side) * 1.04f, 0.55f + float(i) * 0.18f, 0.0f), Vector3(0.12f, 0.03f, 0.9f), "metal_gray", Basis(Vector3(0, 0, 1), float(side) * 0.6f), false);
+		}
+	}
+	b.text(intake + Vector3(0.0f, 1.32f, -1.04f), Vector3(0, 0, -1), "ВЗ-1 · ФВК"_u, 0.12f, Color(0.85f, 0.83f, 0.78f), true);
+	Door *grille = k.door(intake + Vector3(0.0f, 0.28f, -0.9f), PI, Door::STYLE_METAL, 0.8f, 0.9f, "Дверца воздухозабора"_u);
+	grille->set_padlock(true);
+	ClimbPoint *intake_down = k.climb(intake + Vector3(0.0f, 0.65f, -0.35f), Vector3(0.7f, 0.6f, 0.6f), "Пролезть в воздухозабор и спуститься по скобам"_u, Vector3(-4.8f, UF + 0.15f, 5.05f), 0.0f, 2.6f);
+	intake_down->set_required_door(grille, "Сначала открой дверцу воздухозабора"_u);
+	intake_down->set_noise(3.0f, "step_metal_1");
+	intake_down->set_arrival_pose(false);
+	intake_down->set_arrival_message("Три с половиной метра по скобам. Ты в фильтровентиляционной камере"_u);
+	ClimbPoint *intake_up = k.climb(Vector3(-4.8f, UF + 1.3f, 5.55f), Vector3(0.8f, 1.8f, 0.4f), "Подняться по скобам к воздухозабору"_u, intake + Vector3(0.0f, 0.15f, -1.7f), PI, 2.6f);
+	intake_up->set_required_door(grille, "Дверца воздухозабора закрыта снаружи"_u);
+	intake_up->set_noise(3.0f, "step_metal_2");
+	intake_up->set_arrival_pose(false);
+	k.shadow_zone(Vector3(-4.8f, UC * 0.5f, 5.25f), Vector3(1.2f, -UC, 1.2f));
+	k.hint(intake + Vector3(0.0f, 1.0f, -2.2f), Vector3(4.0f, 2.0f, 3.0f), "Оголовок воздухозабора ФВК. Дверца на навесном замке: болторез справится, но громко. Внизу фильтровентиляционная камера."_u);
+
+	const Vector3 exhaust(17.5f, 0.0f, 3.2f);
+	const float duct_floor = -1.9f;
+	const float duct_roof = -0.75f;
+	b.collider_box(Vector3(14.45f, duct_floor - 0.05f, 3.2f), Basis(), Vector3(7.3f, 0.1f, 1.2f));
+	b.visual_box(Vector3(10.9f, duct_floor - 0.05f, 3.2f), Vector3(0.2f, 0.1f, 1.2f), "metal_gray");
+	b.tiled_box(Vector3(15.05f, duct_floor - 0.05f, 3.2f), Basis(), Vector3(6.1f, 0.1f, 1.2f), "metal_gray", 2.0f, false);
+	for (int i = 0; i < 6; i++) {
+		b.visual_box(Vector3(11.08f + float(i) * 0.168f, duct_floor - 0.02f, 3.2f), Vector3(0.05f, 0.04f, 1.0f), "rust");
+	}
+	b.visual_box(Vector3(11.5f, duct_floor - 0.02f, 2.72f), Vector3(1.0f, 0.04f, 0.05f), "rust");
+	b.visual_box(Vector3(11.5f, duct_floor - 0.02f, 3.68f), Vector3(1.0f, 0.04f, 0.05f), "rust");
+	b.tiled_box(Vector3(13.9f, duct_roof + 0.05f, 3.2f), Basis(), Vector3(6.2f, 0.1f, 1.2f), "metal_gray", 2.0f, true);
+	b.wall(Vector3(10.8f, 0, 2.65f), Vector3(18.1f, 0, 2.65f), duct_floor - 0.1f, duct_roof - duct_floor + 0.2f, 0.1f, "metal_gray");
+	b.wall(Vector3(10.8f, 0, 3.75f), Vector3(18.1f, 0, 3.75f), duct_floor - 0.1f, duct_roof - duct_floor + 0.2f, 0.1f, "metal_gray");
+	b.wall(Vector3(10.85f, 0, 2.6f), Vector3(10.85f, 0, 3.8f), duct_floor - 0.1f, duct_roof - duct_floor + 0.2f, 0.1f, "metal_gray");
+	for (float x = 12.6f; x < 17.0f; x += 1.2f) {
+		b.visual_box(Vector3(x, duct_floor + 0.02f, 3.2f), Vector3(0.04f, 0.04f, 1.0f), "steel", Basis(), false);
+		b.visual_box(Vector3(x, duct_roof - 0.02f, 3.2f), Vector3(0.04f, 0.04f, 1.0f), "steel", Basis(), false);
+	}
+	b.wall(Vector3(16.95f, 0, 2.55f), Vector3(16.95f, 0, 3.85f), duct_roof, 1.2f - duct_roof, 0.2f, "concrete");
+	b.wall(Vector3(18.05f, 0, 2.55f), Vector3(18.05f, 0, 3.85f), duct_floor - 0.1f, 1.3f - duct_floor, 0.2f, "concrete");
+	b.wall(Vector3(16.85f, 0, 2.65f), Vector3(18.15f, 0, 2.65f), duct_roof, 1.2f - duct_roof, 0.2f, "concrete");
+	b.wall(Vector3(16.85f, 0, 3.75f), Vector3(18.15f, 0, 3.75f), duct_roof, 1.2f - duct_roof, 0.2f, "concrete");
+	for (float y = duct_floor + 0.35f; y < 1.0f; y += 0.36f) {
+		b.visual_box(Vector3(17.88f, y, 3.2f), Vector3(0.05f, 0.03f, 0.46f), "rust");
+	}
+	b.pipe(exhaust + Vector3(0.82f, 0.2f, 0.0f), exhaust + Vector3(0.82f, 2.6f, 0.0f), 0.09f, "rust");
+	b.visual_box(exhaust + Vector3(0.82f, 2.65f, 0.0f), Vector3(0.3f, 0.06f, 0.3f), "rust");
+	b.text(exhaust + Vector3(0.0f, 0.75f, -0.76f), Vector3(0, 0, -1), "ВЫТЯЖКА СУ"_u, 0.1f, Color(0.85f, 0.83f, 0.78f), true);
+	Door *lid = k.door(exhaust + Vector3(0.0f, 1.2f, 0.0f), 0.0f, Door::STYLE_HATCH, 0.9f, 0.9f, "Крышка вентшахты"_u);
+	(void)lid;
+	ClimbPoint *duct_in = k.climb(exhaust + Vector3(0.0f, 0.75f, 0.0f), Vector3(0.6f, 0.5f, 0.6f), "Спуститься в вентшахту"_u, Vector3(17.45f, duct_floor + 0.05f, 3.2f), PI * 0.5f, 2.0f);
+	duct_in->set_required_door(lid, "Сначала подними крышку вентшахты"_u);
+	duct_in->set_noise(3.0f, "step_metal_3");
+	duct_in->set_arrival_pose(true);
+	duct_in->set_arrival_message("Узкий жестяной короб. Дальше только ползком, пригнувшись"_u);
+	ClimbPoint *duct_out = k.climb(Vector3(17.8f, -1.2f, 3.2f), Vector3(0.3f, 1.2f, 0.7f), "Подняться по скобам наверх"_u, exhaust + Vector3(0.0f, 0.15f, 1.3f), 0.0f, 2.0f);
+	duct_out->set_required_door(lid, "Крышка вентшахты закрыта"_u);
+	duct_out->set_noise(3.0f, "step_metal_0");
+	duct_out->set_arrival_pose(false);
+	ClimbPoint *drop = k.climb(Vector3(11.5f, duct_floor + 0.08f, 3.2f), Vector3(0.9f, 0.16f, 0.9f), "Выдавить решётку и спрыгнуть в санузел (шумно)"_u, Vector3(11.5f, UF + 0.15f, 2.9f), 0.0f, 1.0f);
+	drop->set_noise(7.0f, "metal_door");
+	drop->set_arrival_pose(false);
+	drop->set_arrival_message("Решётка с грохотом упала на кафель. Ты в санузле убежища"_u);
+	ClimbPoint *climb_up = k.climb(Vector3(11.5f, UC - 0.06f, 3.2f), Vector3(0.9f, 0.12f, 0.9f), "Подтянуться в вентканал с раковины"_u, Vector3(11.65f, duct_floor + 0.05f, 3.2f), -PI * 0.5f, 1.6f);
+	climb_up->set_noise(4.0f, "step_metal_2");
+	climb_up->set_arrival_pose(true);
+	b.wall(Vector3(10.95f, 0, 2.6f), Vector3(10.95f, 0, 3.8f), UC, duct_floor - 0.1f - UC, 0.1f, "concrete");
+	b.wall(Vector3(12.05f, 0, 2.6f), Vector3(12.05f, 0, 3.8f), UC, duct_floor - 0.1f - UC, 0.1f, "concrete");
+	b.wall(Vector3(10.9f, 0, 2.65f), Vector3(12.1f, 0, 2.65f), UC, duct_floor - 0.1f - UC, 0.1f, "concrete");
+	b.wall(Vector3(10.9f, 0, 3.75f), Vector3(12.1f, 0, 3.75f), UC, duct_floor - 0.1f - UC, 0.1f, "concrete");
+	k.shadow_zone(Vector3(14.45f, (duct_floor + duct_roof) * 0.5f, 3.2f), Vector3(7.4f, 1.4f, 1.2f));
+	k.shadow_zone(Vector3(17.5f, duct_roof * 0.5f, 3.2f), Vector3(1.0f, -duct_roof + 1.0f, 1.0f));
+	k.dust(Vector3(14.4f, duct_floor + 0.55f, 3.2f), Vector3(3.4f, 0.5f, 0.45f), 1.5f);
+	k.hint(exhaust + Vector3(0.0f, 1.0f, 2.0f), Vector3(4.0f, 2.0f, 4.0f), "Вытяжная вентшахта санузла. Крышку никто не запирал. Внизу узкий короб: ползи пригнувшись (C)."_u);
+}
+
 void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	Kit k(b, d, g);
 	d.id = "shelter";
 	d.title = "Бомбоубежище ГО под заводом"_u;
 	d.subtitle = "Защитное сооружение гражданской обороны №14"_u;
-	d.briefing = "[b]Объект:[/b] убежище ГО под территорией приборостроительного завода. Числится на балансе, поэтому охраняется: вахтёр на КПП, обходчик по двору и дежурный внутри.\n\n"_u
-				 "[b]Два пути внутрь.[/b] Основной — через павильон входа во дворе: две гермодвери и тамбур-шлюз, но на внешней гермодвери геркон, а сами гермы открываются громко. Второй — оголовок аварийного выхода в западном углу двора: навесной замок, у тебя есть болторез.\n\n"_u
+	d.briefing = "[b]Объект:[/b] убежище ГО под территорией приборостроительного завода. Числится на балансе, поэтому охраняется: вахтёр на КПП и обходчик по двору. Внутри людей нет, только датчики.\n\n"_u
+				 "[b]Четыре пути внутрь.[/b] Павильон входа: две гермодвери и тамбур-шлюз, на внешней гермодвери геркон, гермы открываются громко. Оголовок аварийного выхода в западном углу двора: навесной замок, у тебя есть болторез. Воздухозабор ФВК посреди двора: дверца на замке, за ней скобы прямо в фильтровентиляционную камеру. Вытяжная шахта санузла у восточного края двора: крышка не заперта, но дальше придётся ползти по коробу.\n\n"_u
 				 "[b]Нужно:[/b] снять гермодверь, ФВУ в фильтровентиляционной камере и плакат ГО в отсеке, забрать противогаз ГП-5.\n\n"_u
-				 "[b]Подсказка:[/b] свет и датчики внутри питаются от главного щита в дизельной. Обесточишь — станет темно, но дежурный пойдёт проверять щиток.\n\n"_u
+				 "[b]Подсказка:[/b] свет и датчики внутри питаются от главного щита в дизельной. Обесточишь — станет темно, но обходчик спустится проверить щиток.\n\n"_u
 				 "Уходить — через пролом в бетонном заборе на юге."_u;
 	d.exit_hint = "через пролом в южном заборе"_u;
 	d.spawn_position = Vector3(-20.0f, 0.1f, -37.0f);
@@ -169,12 +265,12 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	k.objective_item("journal", "Найти журнал дежурств"_u, true);
 	k.objective_action("crank", "Покрутить ручной привод вентилятора"_u, true);
 
-	b.slab(-140.0f, -140.0f, 140.0f, 140.0f, 0.0f, 0.5f, "ground", { Rect2(2.3f, 9.4f, 1.7f, 4.6f) });
+	b.slab(-140.0f, -140.0f, 140.0f, 140.0f, 0.0f, 0.5f, "ground", { Rect2(2.3f, 9.4f, 1.7f, 4.6f), Rect2(-5.3f, 4.75f, 1.0f, 1.0f), Rect2(17.05f, 2.75f, 0.9f, 0.9f) }, 28.0f);
 	b.box(Vector3(0.0f, 0.02f, -42.0f), Vector3(280.0f, 0.06f, 10.0f), "asphalt");
 	b.box(Vector3(10.0f, 0.02f, -10.0f), Vector3(8.0f, 0.05f, 40.0f), "asphalt");
 
 	b.slab(-42.6f, -9.7f, 14.3f, 16.7f, UF, 0.3f, "concrete_floor");
-	b.slab(-42.6f, -9.7f, 14.3f, 9.2f, UC + 0.3f, 0.3f, "concrete", { Rect2(-42.4f, -2.4f, 2.4f, 2.4f) });
+	b.slab(-42.6f, -9.7f, 14.3f, 9.2f, UC + 0.3f, 0.3f, "concrete", { Rect2(-42.4f, -2.4f, 2.4f, 2.4f), Rect2(-5.3f, 4.75f, 1.0f, 1.0f), Rect2(11.0f, 2.7f, 1.0f, 1.0f) });
 
 	b.wall(Vector3(2.2f, 0, 9.2f), Vector3(2.2f, 0, 16.6f), UF, -UF - 0.5f, 0.3f, "concrete");
 	b.wall(Vector3(7.85f, 0, 3.0f), Vector3(7.85f, 0, 16.6f), UF, -UF - 0.5f, 0.3f, "concrete");
@@ -199,7 +295,7 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	b.text(Vector3(5.0f, 2.6f, 7.86f), Vector3(0, 0, -1), "УБЕЖИЩЕ № 14"_u, 0.3f, Color(0.92f, 0.9f, 0.82f));
 	Door *pav_door = k.door(Vector3(5.0f, 0.0f, 8.0f), 0.0f, Door::STYLE_METAL, 1.1f, 2.1f, "Павильон входа в убежище"_u);
 	(void)pav_door;
-	k.camera(Vector3(7.7f, 2.8f, 7.75f), yaw_towards(Vector3(7.7f, 0, 7.75f), Vector3(4.0f, 0, 2.0f)), 25.0f, -24.0f, false, "plant", "Камера над павильоном"_u);
+	k.camera(Vector3(7.7f, 2.8f, 7.75f), yaw_towards(Vector3(7.7f, 0, 7.75f), Vector3(6.0f, 0, 1.5f)), 25.0f, -24.0f, false, "plant", "Камера над павильоном"_u);
 	k.board(Vector3(1.75f, 1.5f, 6.5f), PI * 0.5f, "Убежище № 14"_u,
 			"Защитное сооружение гражданской обороны.\nВместимость: 300 человек.\nОтветственный: начальник ГО завода.\n\nПри сигнале «Внимание всем!» включить радио и слушать сообщение штаба ГО.\n\n[color=#a0a49f]Табличка висит с восьмидесятых. Замок на павильоне новый, а на гермодвери кто-то поставил геркон.[/color]"_u,
 			false);
@@ -437,22 +533,15 @@ void build_shelter(LevelBuilder &b, LevelData &d, UrbexGame &g) {
 	yard->add_route_point(Vector3(0.0f, 0.0f, -24.0f), 2.0f);
 	yard->add_route_point(Vector3(28.0f, 0.0f, 20.0f), 2.0f);
 
-	Guard *duty = k.guard(Guard::KIND_CHOP, "Дежурный по убежищу"_u, Vector3(8.0f, UF + 0.2f, -1.2f), true);
-	duty->add_route_point(Vector3(9.0f, UF, -1.2f), 4.0f);
-	duty->add_route_point(Vector3(4.0f, UF, -6.0f), 3.0f);
-	duty->add_route_point(Vector3(-8.0f, UF, -1.2f), 1.0f);
-	duty->add_route_point(Vector3(-8.0f, UF, -6.0f), 3.0f);
-	duty->add_route_point(Vector3(-20.0f, UF, -1.2f), 2.0f);
-	duty->add_route_point(Vector3(-3.0f, UF, 3.0f), 3.0f);
-	duty->set_vision(14.0f, 105.0f);
 
 	Guard *watchman = k.guard(Guard::KIND_WATCHMAN, "Вахтёр на КПП"_u, booth + Vector3(0.5f, 0.15f, -0.3f), false);
 	watchman->set_post(booth + Vector3(0.5f, 0.15f, -0.3f), { yaw_towards(booth, Vector3(11.0f, 0, -32.0f)), yaw_towards(booth, Vector3(0.0f, 0, 5.0f)) }, 8.0f, true);
 	watchman->set_vision(12.0f, 100.0f);
 
 	shelter_dressing(k);
+	vent_entrances(k);
 
-	d.gbr_search_points = { Vector3(5.0f, 0.0f, 3.0f), Vector3(6.6f, UF, 6.0f), Vector3(0.0f, UF, -1.2f), Vector3(-8.0f, UF, -6.0f), Vector3(4.0f, UF, -6.0f), Vector3(-19.0f, UF, -6.0f), Vector3(-30.0f, UF, -1.2f), Vector3(-3.0f, UF, 3.0f), Vector3(-36.0f, 0.0f, -6.0f) };
+	d.gbr_search_points = { Vector3(5.0f, 0.0f, 3.0f), Vector3(6.6f, UF, 6.0f), Vector3(0.0f, UF, -1.2f), Vector3(-8.0f, UF, -6.0f), Vector3(4.0f, UF, -6.0f), Vector3(-19.0f, UF, -6.0f), Vector3(-30.0f, UF, -1.2f), Vector3(-3.0f, UF, 3.0f), Vector3(-36.0f, 0.0f, -6.0f), Vector3(-4.8f, 0.0f, 3.2f), Vector3(17.5f, 0.0f, 5.0f), Vector3(10.5f, UF, 1.5f) };
 }
 
 }

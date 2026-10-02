@@ -62,7 +62,8 @@ public:
 
 	void wall(const godot::Vector3 &a, const godot::Vector3 &b, float y0, float height, float thickness, const char *material, std::vector<Opening> openings = {}, bool collide = true);
 	void hex_slab(const godot::Vector3 &center, float radius, float top_y, float thickness, const char *material);
-	void slab(float x0, float z0, float x1, float z1, float top_y, float thickness, const char *material, const std::vector<godot::Rect2> &holes = {});
+	void slab(float x0, float z0, float x1, float z1, float top_y, float thickness, const char *material, const std::vector<godot::Rect2> &holes = {}, float tile = 6.0f);
+	void tiled_box(const godot::Vector3 &center, const godot::Basis &basis, const godot::Vector3 &size, const char *material, float tile, bool collide);
 	void ramp(const godot::Vector3 &bottom, const godot::Vector3 &top, float width, const char *material, bool rails = false);
 	void railing(const godot::Vector3 &a, const godot::Vector3 &b, float y, float height, const char *material);
 	void rubble(const godot::Vector3 &center, float radius, int count, const char *material);
