@@ -1,0 +1,89 @@
+name: Build GDExtension
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+            platform: linux
+          - name: Windows
+            os: windows-latest
+            platform: windows
+          - name: macOS
+            os: macos-latest
+            platform: macos
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install SCons
+        run: python -m pip install scons
+
+      - name: Build debug
+        run: scons platform=${{ matrix.platform }} target=template_debug -j4
+
+      - name: Build release
+        run: scons platform=${{ matrix.platform }} target=template_release -j4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urbex-bin-${{ matrix.platform }}
+          path: project/bin/
+
+  selftest:
+    name: Selftest (Godot ${{ matrix.godot }})
+    needs: build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        godot: ["4.5-stable", "4.7.2-stable"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: urbex-bin-linux
+          path: project/bin
+
+      - name: Download Godot
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/${{ matrix.godot }}/Godot_v${{ matrix.godot }}_linux.x86_64.zip"
+          unzip -q godot.zip
+          echo "GODOT=$PWD/Godot_v${{ matrix.godot }}_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Run selftest
+        run: tests/run_selftest.sh --no-build
+
+  package:
+    name: Package project
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: urbex-bin-*
+          path: project/bin
+          merge-multiple: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Urbex-Simulator-project
+          path: project/
