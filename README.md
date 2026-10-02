@@ -74,10 +74,12 @@
 Нужно: Godot 4.5 или новее, Python 3, SCons (`pip install scons`) и компилятор C++17 (Visual Studio Build Tools на Windows, GCC/Clang на Linux, Xcode на macOS).
 
 ```bash
-git clone --recursive https://github.com/skibididobdob228/Urbex-Simulator.git
+git clone --recursive -b claude/dreamy-rubin-ifb0nf https://github.com/skibididobdob228/Urbex-Simulator.git
 cd Urbex-Simulator
 scons platform=windows target=template_debug    # или linux / macos
 ```
+
+Игра пока лежит в ветке `claude/dreamy-rubin-ifb0nf`, поэтому в команде стоит `-b`. Когда ветку сольют в `main`, его можно убрать.
 
 Библиотека появится в `project/bin/`. После этого открой папку `project/` в Godot и нажми F5.
 
@@ -89,7 +91,7 @@ scons platform=windows target=template_debug    # или linux / macos
 
 ```bash
 sudo pacman -Syu --needed base-devel git python scons godot
-git clone --recursive https://github.com/skibididobdob228/Urbex-Simulator.git
+git clone --recursive -b claude/dreamy-rubin-ifb0nf https://github.com/skibididobdob228/Urbex-Simulator.git
 cd Urbex-Simulator
 scons platform=linux target=template_debug -j"$(nproc)"
 godot --path project
